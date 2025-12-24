@@ -126,7 +126,7 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
             <div className="flex flex-col items-center gap-8 w-full max-w-sm z-10 relative">
                 <div className="text-center space-y-1">
                     <p style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-[0.3em]">Identidad</p>
-                    <h2 style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-bold">{player.name}</h2>
+                    <h2 style={{ color: color, fontFamily: theme.font }} className="text-4xl font-bold">{player.name}</h2>
                 </div>
 
                 <div 
@@ -170,17 +170,6 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                         />
                     )}
 
-                    {isHolding && (
-                        <div 
-                            className="absolute w-full h-2 z-20 shadow-[0_0_20px_currentColor]"
-                            style={{ 
-                                backgroundColor: color, 
-                                color: color,
-                                animation: 'scan 1.5s linear infinite'
-                            }}
-                        />
-                    )}
-
                     <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center transition-all duration-200 ${isHolding ? 'pb-32' : ''}`}>
                         
                         {!isHolding ? (
@@ -200,7 +189,7 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                             <div className="flex flex-col items-center gap-4 animate-in fade-in duration-200">
                                 {player.isImp ? (
                                     <div className="relative flex items-center justify-center mb-2 mt-2">
-                                        {/* Aura Effects */}
+                                        {/* Aura Effects Impostor */}
                                         <div className="absolute w-28 h-28 bg-red-600/30 rounded-full blur-xl animate-pulse" />
                                         <div 
                                             className="absolute w-24 h-24 rounded-full border border-red-500/30 border-dashed opacity-60"
@@ -216,7 +205,22 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                                         />
                                     </div>
                                 ) : (
-                                    <Shield size={48} className="text-green-500 mb-2" />
+                                    <div className="relative flex items-center justify-center mb-2 mt-2">
+                                        {/* Aura Effects Civil */}
+                                        <div className="absolute w-28 h-28 bg-green-600/30 rounded-full blur-xl animate-pulse" />
+                                        <div 
+                                            className="absolute w-24 h-24 rounded-full border border-green-500/30 border-dashed opacity-60"
+                                            style={{ animation: 'imp-aura-spin 12s linear infinite reverse' }}
+                                        />
+                                        <div 
+                                            className="absolute w-16 h-16 bg-green-500/20 rounded-full blur-md mix-blend-screen"
+                                            style={{ animation: 'imp-aura-pulse 3s ease-in-out infinite' }}
+                                        />
+                                        <Shield 
+                                            size={48} 
+                                            className="text-green-500 relative z-10 drop-shadow-[0_0_10px_rgba(34,197,94,0.8)]" 
+                                        />
+                                    </div>
                                 )}
 
                                 <h3 
@@ -258,12 +262,16 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                     <div className="absolute bottom-4 right-4 w-4 h-4 border-r-2 border-b-2 opacity-50 transition-colors z-10" style={{ borderColor: isHolding ? color : theme.text }}/>
                 </div>
 
-                <div className="h-16 w-full flex items-center justify-center relative">
+                <div className="h-16 w-full flex items-center justify-center relative mt-4">
+                    
+                    {/* External pulse div removed from here */}
+
                     <button
                         onPointerDown={(e) => {
                             if (isButtonVisible) {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                if (navigator.vibrate) navigator.vibrate(20);
                                 nextAction();
                             }
                         }}
@@ -273,13 +281,25 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                             opacity: isButtonVisible ? 1 : 0,
                             transform: isButtonVisible ? 'scale(1)' : 'scale(0.95)',
                             pointerEvents: isButtonVisible ? 'auto' : 'none',
-                            touchAction: 'manipulation'
+                            touchAction: 'manipulation',
+                            boxShadow: isLastPlayer && isButtonVisible ? `0 0 20px ${color}` : '0 4px 12px rgba(0,0,0,0.3)'
                         }}
-                        className="relative z-20 w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 rounded-full overflow-hidden transform-gpu"
+                        className={`relative z-20 w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg transition-all duration-100 flex items-center justify-center gap-2 rounded-full overflow-hidden transform-gpu
+                        ${isLastPlayer ? 'active:scale-90' : 'active:scale-95'}`}
                     >
+                         {/* Shimmer Effect for Last Player */}
+                         {isLastPlayer && (
+                            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-full">
+                                <div 
+                                    className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite]"
+                                    style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)' }}
+                                />
+                            </div>
+                         )}
+
                          <div className="absolute inset-[2px] rounded-full z-0" style={{ backgroundColor: color }} />
                          
-                        <span className="relative z-10">{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
+                        <span className="relative z-10 tracking-widest">{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
                         {isLastPlayer ? <Play size={20} fill="currentColor" className="relative z-10"/> : <Eye size={20} className="relative z-10"/>}
                     </button>
                 </div>
@@ -312,6 +332,9 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                     @keyframes imp-aura-pulse {
                         0%, 100% { transform: scale(1); opacity: 0.5; }
                         50% { transform: scale(1.2); opacity: 0.8; }
+                    }
+                    @keyframes shimmer {
+                        100% { transform: translateX(100%); }
                     }
                 `}</style>
             </div>

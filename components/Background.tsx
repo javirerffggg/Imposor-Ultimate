@@ -5,9 +5,10 @@ interface BackgroundProps {
     theme: ThemeConfig;
     phase?: string;
     isTroll?: boolean;
+    activeColor?: string;
 }
 
-export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll }) => {
+export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, activeColor }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -98,10 +99,15 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll })
                 
                 // Logic for Colors
                 let drawColor = theme.accent;
-                
-                // Turing Theme: Encryption Pulse
-                // Changes color slightly based on time to simulate processing
-                if (theme.name === "Turing") {
+
+                // Priority: Player Color (Reveal Phase) > Troll > Theme Specifics
+                if (phase === 'revealing' && activeColor) {
+                    drawColor = activeColor;
+                } else if (isTroll) {
+                     // Flicker color in troll mode
+                     drawColor = Math.random() > 0.8 ? '#ef4444' : theme.accent;
+                } else if (theme.name === "Turing") {
+                     // Turing Theme: Encryption Pulse
                      const pulse = Math.sin(time * 0.05 + this.x * 0.01);
                      if (pulse > 0.8) {
                          drawColor = '#ffffff'; // Bright flash
@@ -114,11 +120,6 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll })
 
                 ctx.fillStyle = drawColor;
                 ctx.globalAlpha = this.opacity;
-
-                if (isTroll) {
-                     // Flicker color in troll mode
-                     ctx.fillStyle = Math.random() > 0.8 ? '#ef4444' : theme.accent;
-                }
 
                 if (theme.particleType === 'circle') {
                     ctx.beginPath();
@@ -134,7 +135,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll })
                     for (let i = 0; i < this.trail.length; i++) {
                         const point = this.trail[i];
                         const trailOpacity = (i / this.trail.length) * this.opacity * 0.5;
-                        ctx.fillStyle = theme.accent;
+                        ctx.fillStyle = phase === 'revealing' && activeColor ? activeColor : theme.accent;
                         ctx.globalAlpha = trailOpacity;
                         ctx.fillText(this.char, point.x, point.y);
                         
@@ -176,7 +177,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll })
             cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', resize);
         };
-    }, [theme, phase, isTroll]);
+    }, [theme, phase, isTroll, activeColor]);
 
     return (
         <canvas 

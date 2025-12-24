@@ -41,6 +41,9 @@ function App() {
     // State for the "Hold to Reveal" button
     const [isHoldingReveal, setIsHoldingReveal] = useState(false);
 
+    // -- Derived State for Aesthetics --
+    const currentPlayerColor = PLAYER_COLORS[gameState.currentPlayerIndex % PLAYER_COLORS.length];
+
     // -- Effects --
 
     // Logic for Hold to Reveal in Results screen
@@ -217,7 +220,7 @@ function App() {
                             <button 
                                 onClick={addPlayer}
                                 style={{ backgroundColor: theme.accent }}
-                                className="px-4 rounded-lg text-white font-bold"
+                                className="px-4 rounded-lg text-white font-bold active:scale-90 transition-transform"
                             >
                                 <Check />
                             </button>
@@ -244,13 +247,13 @@ function App() {
                                 <button 
                                     onClick={() => setGameState(prev => ({...prev, impostorCount: Math.max(1, prev.impostorCount - 1)}))}
                                     style={{ color: theme.text }}
-                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
+                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 active:scale-75 transition-transform rounded"
                                 >-</button>
                                 <span style={{ color: theme.text }} className="font-bold w-4 text-center">{gameState.impostorCount}</span>
                                 <button 
                                     onClick={() => setGameState(prev => ({...prev, impostorCount: Math.min(gameState.players.length - 1, prev.impostorCount + 1)}))}
                                     style={{ color: theme.text }}
-                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
+                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 active:scale-75 transition-transform rounded"
                                 >+</button>
                             </div>
                         </div>
@@ -264,7 +267,7 @@ function App() {
                             <button 
                                 onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, hintMode: !prev.settings.hintMode}}))}
                                 style={{ backgroundColor: gameState.settings.hintMode ? theme.accent : theme.border }}
-                                className="w-12 h-6 rounded-full relative transition-colors"
+                                className="w-12 h-6 rounded-full relative transition-colors active:scale-90 transform-gpu"
                             >
                                 <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.hintMode ? 'left-7' : 'left-1'}`} />
                             </button>
@@ -280,7 +283,7 @@ function App() {
                              <button 
                                 onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, trollMode: !prev.settings.trollMode}}))}
                                 style={{ backgroundColor: gameState.settings.trollMode ? theme.accent : theme.border }}
-                                className="w-12 h-6 rounded-full relative transition-colors"
+                                className="w-12 h-6 rounded-full relative transition-colors active:scale-90 transform-gpu"
                             >
                                 <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.trollMode ? 'left-7' : 'left-1'}`} />
                             </button>
@@ -297,7 +300,7 @@ function App() {
                             borderRadius: theme.radius,
                             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}
-                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
+                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 active:scale-95 transition-all backdrop-blur-md transform-gpu"
                     >
                         <LayoutGrid size={16} /> Categorías de palabras
                     </button>
@@ -312,7 +315,7 @@ function App() {
                             borderRadius: theme.radius,
                             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}
-                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
+                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 active:scale-95 transition-all backdrop-blur-md transform-gpu"
                     >
                         <Settings size={16} /> Ajustes
                     </button>
@@ -344,7 +347,7 @@ function App() {
                                 // Subtle border shadow for definition
                                 boxShadow: '0 0 0 1px rgba(255,255,255,0.1)'
                             }}
-                            className="w-full py-3.5 relative z-10 text-white font-black text-base active:scale-95 transition-all flex items-center justify-center gap-3 pointer-events-auto rounded-full overflow-hidden"
+                            className="w-full py-3.5 relative z-10 text-white font-black text-base active:scale-90 transition-all duration-100 flex items-center justify-center gap-3 pointer-events-auto rounded-full overflow-hidden transform-gpu"
                         >
                             {/* Internal Clean Shimmer */}
                             {isValidToStart && (
@@ -365,7 +368,8 @@ function App() {
 
     const renderReveal = () => {
         // Deterministic color based on player index
-        const cardColor = PLAYER_COLORS[gameState.currentPlayerIndex % PLAYER_COLORS.length];
+        // Using calculation from top scope for consistency, but redefined here for local variable clarity
+        const cardColor = currentPlayerColor;
         const isLastPlayer = gameState.currentPlayerIndex === gameState.players.length - 1;
 
         // Aura Expansion Effect
@@ -618,7 +622,7 @@ function App() {
                             onPointerDown={() => setIsHoldingReveal(true)}
                             onPointerUp={() => setIsHoldingReveal(false)}
                             onPointerLeave={() => setIsHoldingReveal(false)}
-                            className="w-full max-w-xs h-14 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg relative overflow-hidden flex items-center justify-center gap-2 select-none touch-none"
+                            className="w-full max-w-xs h-14 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg relative overflow-hidden flex items-center justify-center gap-2 select-none touch-none transform-gpu"
                         >
                             {/* Progress Fill */}
                             <div 
@@ -643,7 +647,7 @@ function App() {
                                 color: showResults ? 'white' : theme.text,
                                 borderColor: theme.border
                             }}
-                            className={`relative overflow-hidden w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'} transform-gpu`}
+                            className={`relative overflow-hidden w-full py-4 font-black uppercase tracking-wide active:scale-90 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'} transform-gpu`}
                         >
                             {/* Inner Bg Mask */}
                             <div className="absolute inset-[1px] rounded-[15px] z-0" style={{ backgroundColor: showResults ? theme.accent : theme.cardBg }} />
@@ -658,60 +662,10 @@ function App() {
                                 borderColor: theme.border, 
                                 color: theme.sub 
                             }}
-                            className="w-full py-4 border font-bold uppercase tracking-wide text-[10px] hover:text-opacity-100 hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl backdrop-blur-md shadow-lg"
+                            className="w-full py-4 border font-bold uppercase tracking-wide text-[10px] hover:text-opacity-100 hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center gap-2 rounded-2xl backdrop-blur-md shadow-lg transform-gpu"
                         >
                             <Settings size={16} /> Configuración
                         </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const renderCategories = () => {
-        const allCats = Object.keys(CATEGORIES_DATA);
-        const selectedCount = gameState.settings.selectedCategories.length;
-        const allSelected = selectedCount === allCats.length;
-
-        return (
-             <div className={`fixed inset-0 z-50 transform transition-transform duration-300 ${categoriesOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setCategoriesOpen(false)} />
-                <div style={{ backgroundColor: theme.bg }} className="absolute right-0 h-full w-full md:w-96 shadow-2xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-y-auto flex flex-col border-l border-white/10">
-                    
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 style={{ color: theme.text }} className="text-2xl font-black italic">Categorías</h2>
-                            <p style={{ color: theme.sub }} className="text-xs font-bold">{selectedCount > 0 ? selectedCount : 'Todas'} seleccionadas</p>
-                        </div>
-                        <button style={{ color: theme.text }} onClick={() => setCategoriesOpen(false)}><X /></button>
-                    </div>
-
-                    {/* Toggle All Button */}
-                    <button 
-                        onClick={toggleAllCategories}
-                        style={{ borderColor: theme.border, color: theme.accent }}
-                        className="w-full py-3 border rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest mb-6 hover:bg-white/5 transition-all"
-                    >
-                        <CheckCheck size={16} /> {allSelected ? "Deseleccionar Todas" : "Seleccionar Todas"}
-                    </button>
-
-                    {/* List */}
-                    <div className="space-y-2 pb-12">
-                         {allCats.map(cat => {
-                             const isSelected = gameState.settings.selectedCategories.includes(cat);
-                             return (
-                                <button 
-                                    key={cat}
-                                    onClick={() => toggleCategory(cat)}
-                                    style={{ backgroundColor: isSelected ? theme.accent : theme.border }}
-                                    className={`w-full flex justify-between items-center p-3 rounded-lg text-sm font-bold transition-all active:scale-[0.98]`}
-                                >
-                                    <span style={{ color: isSelected ? 'white' : theme.text }}>{cat}</span>
-                                    {isSelected && <Check size={14} color="white" />}
-                                </button>
-                             );
-                        })}
                     </div>
                 </div>
             </div>
@@ -755,9 +709,70 @@ function App() {
         </div>
     );
 
+    const renderCategories = () => {
+        const allCats = Object.keys(CATEGORIES_DATA);
+        const selected = gameState.settings.selectedCategories;
+        const isNoneSelected = selected.length === 0;
+
+        return (
+            <div className={`fixed inset-0 z-50 transform transition-transform duration-300 ${categoriesOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                <div style={{ backgroundColor: theme.bg }} className="absolute inset-0 flex flex-col">
+                    <div className="p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between border-b border-white/10 shrink-0 bg-inherit z-10">
+                        <h2 style={{ color: theme.text }} className="text-2xl font-black italic">Categorías</h2>
+                        <button style={{ color: theme.text }} onClick={() => setCategoriesOpen(false)}><X /></button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <div className="mb-6">
+                             <button 
+                                onClick={toggleAllCategories}
+                                style={{ 
+                                    borderColor: theme.accent, 
+                                    color: theme.accent,
+                                    backgroundColor: theme.cardBg 
+                                }}
+                                className="w-full py-4 border rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 backdrop-blur-md transition-all active:scale-95 transform-gpu"
+                            >
+                                <CheckCheck size={16} />
+                                {selected.length === allCats.length ? 'Resetear (Todas Activas)' : 'Seleccionar Todo'}
+                            </button>
+                            {isNoneSelected && (
+                                <p style={{ color: theme.sub }} className="text-center text-[10px] mt-2 font-bold uppercase tracking-widest opacity-70">
+                                    Todas las categorías están activas por defecto
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 pb-32">
+                            {allCats.map(cat => {
+                                const isActive = selected.includes(cat);
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => toggleCategory(cat)}
+                                        style={{ 
+                                            backgroundColor: isActive ? theme.accent : 'transparent',
+                                            borderColor: isActive ? theme.accent : theme.border,
+                                            color: isActive ? '#fff' : theme.text,
+                                            boxShadow: isActive ? `0 4px 12px ${theme.accent}40` : 'none'
+                                        }}
+                                        className="p-4 rounded-xl border font-bold text-left flex justify-between items-center transition-all active:scale-95 backdrop-blur-sm transform-gpu"
+                                    >
+                                        <span className="opacity-90 text-sm uppercase tracking-wide">{cat}</span>
+                                        {isActive && <Check size={18} strokeWidth={3} />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div style={{ backgroundColor: theme.bg, color: theme.text }} className="w-full h-full relative overflow-hidden transition-colors duration-700">
-            <Background theme={theme} phase={gameState.phase} isTroll={gameState.isTrollEvent} />
+            <Background theme={theme} phase={gameState.phase} isTroll={gameState.isTrollEvent} activeColor={currentPlayerColor} />
             
             {gameState.phase === 'setup' && renderSetup()}
             {gameState.phase === 'revealing' && renderReveal()}
