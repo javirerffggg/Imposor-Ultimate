@@ -3,9 +3,11 @@ import { ThemeConfig } from '../types';
 
 interface BackgroundProps {
     theme: ThemeConfig;
+    phase?: string;
+    isTroll?: boolean;
 }
 
-export const Background: React.FC<BackgroundProps> = ({ theme }) => {
+export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -16,6 +18,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
 
         let animationFrameId: number;
         let particles: any[] = [];
+        let time = 0;
 
         const resize = () => {
             canvas.width = window.innerWidth;
@@ -33,17 +36,23 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
             speedY: number;
             char: string;
             opacity: number;
+            originalSpeedY: number;
+            trail: {x: number, y: number, opacity: number}[]; // For Cyber theme
 
             constructor() {
                 this.x = Math.random() * canvas!.width;
                 this.y = Math.random() * canvas!.height;
                 this.size = Math.random() * (theme.particleType !== 'circle' ? 14 : 3) + 1;
-                this.speedY = theme.particleType === 'rain' || theme.particleType === 'binary' 
+                
+                this.originalSpeedY = theme.particleType === 'rain' || theme.particleType === 'binary' 
                     ? Math.random() * 3 + 2 
                     : (Math.random() - 0.5) * 0.5;
+                
+                this.speedY = this.originalSpeedY;
                 this.speedX = theme.particleType === 'rain' || theme.particleType === 'binary' 
                     ? 0 
                     : (Math.random() - 0.5) * 0.5;
+                
                 this.char = theme.particleType === 'binary' ? (Math.random() > 0.5 ? "1" : "0") : "";
                 if (theme.particleType === 'rain') {
                     // Matrix characters
@@ -51,15 +60,33 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
                     this.char = chars[Math.floor(Math.random() * chars.length)];
                 }
                 this.opacity = Math.random() * 0.5 + 0.1;
+                this.trail = [];
             }
 
             update() {
-                this.y += this.speedY;
-                this.x += this.speedX;
+                // Game State Reactivity
+                let speedMultiplier = 1;
+                if (phase === 'revealing') speedMultiplier = 0.5; // Suspense
+                if (isTroll) speedMultiplier = 4.0; // Chaos
+
+                // Store trail for Cyber theme
+                if (theme.name === "Night City") {
+                    this.trail.push({x: this.x, y: this.y, opacity: this.opacity});
+                    if (this.trail.length > 5) this.trail.shift();
+                }
+
+                this.y += this.speedY * speedMultiplier;
+                this.x += this.speedX * speedMultiplier;
+
+                if (isTroll) {
+                     // Add chaotic jitter in Troll mode
+                     this.x += (Math.random() - 0.5) * 2;
+                }
 
                 if (this.y > canvas!.height) {
                     this.y = -20;
                     this.x = Math.random() * canvas!.width;
+                    this.trail = [];
                 }
                 if (this.x < -20 || this.x > canvas!.width + 20) {
                     this.x = Math.random() * canvas!.width;
@@ -68,8 +95,30 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
 
             draw() {
                 if (!ctx) return;
-                ctx.fillStyle = theme.accent;
+                
+                // Logic for Colors
+                let drawColor = theme.accent;
+                
+                // Turing Theme: Encryption Pulse
+                // Changes color slightly based on time to simulate processing
+                if (theme.name === "Turing") {
+                     const pulse = Math.sin(time * 0.05 + this.x * 0.01);
+                     if (pulse > 0.8) {
+                         drawColor = '#ffffff'; // Bright flash
+                     } else if (pulse > 0.5) {
+                         drawColor = theme.accent;
+                     } else {
+                         drawColor = theme.sub; // Dimmed
+                     }
+                }
+
+                ctx.fillStyle = drawColor;
                 ctx.globalAlpha = this.opacity;
+
+                if (isTroll) {
+                     // Flicker color in troll mode
+                     ctx.fillStyle = Math.random() > 0.8 ? '#ef4444' : theme.accent;
+                }
 
                 if (theme.particleType === 'circle') {
                     ctx.beginPath();
@@ -79,12 +128,31 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
                     ctx.font = `${this.size}px ${theme.font}`;
                     ctx.fillText(this.char, this.x, this.y);
                 }
+
+                // Cyber Theme: Data Snow Trails
+                if (theme.name === "Night City" && this.trail.length > 0) {
+                    for (let i = 0; i < this.trail.length; i++) {
+                        const point = this.trail[i];
+                        const trailOpacity = (i / this.trail.length) * this.opacity * 0.5;
+                        ctx.fillStyle = theme.accent;
+                        ctx.globalAlpha = trailOpacity;
+                        ctx.fillText(this.char, point.x, point.y);
+                        
+                        // "Digital Collision" effect
+                        // Randomly create a horizontal glitch line simulating hitting data
+                        if (Math.random() > 0.98) {
+                            ctx.fillStyle = "#fff";
+                            ctx.fillRect(point.x - 5, point.y, 10, 1);
+                        }
+                    }
+                }
             }
         }
 
         const initParticles = () => {
             particles = [];
-            const count = theme.particleType === 'circle' ? 60 : 100;
+            // Increase density in Troll mode
+            const count = (theme.particleType === 'circle' ? 60 : 100) * (isTroll ? 2 : 1);
             for (let i = 0; i < count; i++) {
                 particles.push(new Particle());
             }
@@ -93,6 +161,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
         initParticles();
 
         const render = () => {
+            time++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach(p => {
                 p.update();
@@ -107,7 +176,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme }) => {
             cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', resize);
         };
-    }, [theme]);
+    }, [theme, phase, isTroll]);
 
     return (
         <canvas 

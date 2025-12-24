@@ -74,17 +74,125 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
         particleType: 'circle'
     },
     cyber: { 
-        name: "Cyberpunk", 
-        bg: "#0d0221", 
-        cardBg: "rgba(26, 11, 60, 0.6)", 
-        accent: "#d946ef", 
-        text: "#ffffff", 
-        sub: "#c026d3", 
+        name: "Night City", 
+        bg: "#020205", 
+        cardBg: "rgba(10, 10, 25, 0.7)", 
+        accent: "#00ff9f", // Verde Neón
+        text: "#fcee0a", // Amarillo Cyber
+        sub: "#ff003c", // Rojo Magenta
         radius: "1rem", 
         font: "'JetBrains Mono', monospace", 
-        border: "rgba(217,70,239,0.5)",
+        border: "rgba(0, 255, 159, 0.4)",
         particleType: 'rain'
     },
+    material: { 
+        name: "Material You", 
+        bg: "#f7f2fa", 
+        cardBg: "rgba(234, 221, 255, 0.5)", 
+        accent: "#6750a4", 
+        text: "#1d1b20", 
+        sub: "#49454f", 
+        radius: "2.5rem", 
+        font: "'Inter', sans-serif", 
+        border: "rgba(103, 80, 164, 0.15)",
+        particleType: 'circle'
+    },
+    zenith: { 
+        name: "Zenith Glass", 
+        bg: "#020617", 
+        cardBg: "rgba(30, 41, 59, 0.5)", 
+        accent: "#38bdf8", 
+        text: "#f8fafc", 
+        sub: "#94a3b8", 
+        radius: "2.5rem", 
+        font: "'Inter', sans-serif", 
+        border: "rgba(56, 189, 248, 0.2)",
+        particleType: 'circle'
+    },
+    protocol: { 
+        name: "Crimson Protocol", 
+        bg: "#0a0000", 
+        cardBg: "rgba(20, 0, 0, 0.8)", 
+        accent: "#ff0000", 
+        text: "#ffcccc", 
+        sub: "#660000", 
+        radius: "0rem", 
+        font: "'JetBrains Mono', monospace", 
+        border: "rgba(255, 0, 0, 0.4)",
+        particleType: 'rain'
+    },
+    ethereal: { 
+        name: "Ethereal Gold", 
+        bg: "#0f1115", 
+        cardBg: "rgba(28, 30, 35, 0.6)", 
+        accent: "#fbbf24", 
+        text: "#ffffff", 
+        sub: "#71717a", 
+        radius: "1rem", 
+        font: "'Playfair Display', serif", 
+        border: "rgba(251, 191, 36, 0.15)",
+        particleType: 'circle'
+    },
+    terminal84: { 
+        name: "Terminal 1984", 
+        bg: "#0d0d0d", 
+        cardBg: "rgba(0, 20, 0, 0.9)", 
+        accent: "#00ff41", 
+        text: "#00ff41", 
+        sub: "#003b00", 
+        radius: "0rem", 
+        font: "'JetBrains Mono', monospace", 
+        border: "rgba(0, 255, 65, 0.5)",
+        particleType: 'binary'
+    },
+    soft: { 
+        name: "Neumorphic Soft", 
+        bg: "#e0e5ec", 
+        cardBg: "rgba(224, 229, 236, 0.6)", 
+        accent: "#a3b1c6", 
+        text: "#44475a", 
+        sub: "#71717a", 
+        radius: "3rem", 
+        font: "'Inter', sans-serif", 
+        border: "rgba(255, 255, 255, 0.8)",
+        particleType: 'circle'
+    },
+    noir: { 
+        name: "Noir Detective", 
+        bg: "#1a1a1a", 
+        cardBg: "rgba(35, 35, 35, 0.8)", 
+        accent: "#e5e5e5", 
+        text: "#ffffff", 
+        sub: "#525252", 
+        radius: "0.25rem", 
+        font: "'Playfair Display', serif", 
+        border: "rgba(255, 255, 255, 0.1)",
+        particleType: 'circle'
+    },
+    paper: { 
+        name: "Expediente 1950", 
+        bg: "#f2e8cf", // Color hueso/papel antiguo
+        cardBg: "rgba(255, 255, 255, 0.4)", 
+        accent: "#386641", // Verde militar oscuro
+        text: "#1a1a1a", 
+        sub: "#6a6a6a", 
+        radius: "0.25rem", 
+        font: "'Playfair Display', serif", 
+        border: "rgba(0, 0, 0, 0.1)",
+        particleType: 'circle'
+    },
+    space: { 
+        name: "Deep Space", 
+        bg: "#000000", 
+        cardBg: "rgba(255, 255, 255, 0.05)", 
+        accent: "#ffffff", 
+        text: "#ffffff", 
+        sub: "#4b5563", 
+        radius: "3rem", 
+        font: "'Inter', sans-serif", 
+        border: "rgba(255, 255, 255, 0.2)",
+        particleType: 'circle'
+    }
 };
 
 export const DEFAULT_PLAYERS = ["Agente 1", "Agente 2", "Agente 3", "Agente 4"];

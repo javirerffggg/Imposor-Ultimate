@@ -35,7 +35,8 @@ function App() {
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [hasSeenCurrentCard, setHasSeenCurrentCard] = useState(false);
     const [showResults, setShowResults] = useState(false); // Controls the "censored" overlay in results
-    const [isExiting, setIsExiting] = useState(false); // Animation state
+    const [isExiting, setIsExiting] = useState(false); // Animation state for card slides
+    const [isPixelating, setIsPixelating] = useState(false); // Animation state for reset dissolve
     
     // State for the "Hold to Reveal" button
     const [isHoldingReveal, setIsHoldingReveal] = useState(false);
@@ -91,6 +92,7 @@ function App() {
         setShowResults(false);
         setIsExiting(false);
         setIsHoldingReveal(false);
+        setIsPixelating(false);
     };
 
     const handleNextPlayer = () => {
@@ -110,6 +112,24 @@ function App() {
             // Reset exit state (this triggers the enter animation for the new component)
             setIsExiting(false);
         }, 300);
+    };
+
+    // Vuelve al menú de configuración
+    const handleBackToSetup = () => {
+        setIsPixelating(true);
+        setTimeout(() => {
+            setGameState(prev => ({...prev, phase: 'setup'}));
+            setIsPixelating(false);
+        }, 800);
+    };
+
+    // Reinicia la partida inmediatamente con la misma configuración
+    const handleReplay = () => {
+        setIsPixelating(true);
+        setTimeout(() => {
+            startGame();
+            // isPixelating se pondrá a false dentro de startGame
+        }, 800);
     };
 
     const addPlayer = () => {
@@ -149,178 +169,223 @@ function App() {
 
     // -- Renders --
 
-    const renderSetup = () => (
-        <div className="flex flex-col h-full relative z-10 animate-in fade-in duration-500 pt-[env(safe-area-inset-top)]">
-            {/* Main Content */}
-            <div className="flex-1 overflow-y-auto px-6 pb-48 space-y-6">
-                
-                {/* Header - Now inside scrollable area */}
-                <header className="pt-6 text-center space-y-2 mb-2">
-                    <h1 style={{ color: theme.text, fontFamily: theme.font }} className="text-5xl font-black italic tracking-tighter">IMPOSTOR</h1>
-                </header>
-
-                {/* Players Section */}
-                <div 
-                    style={{ 
-                        backgroundColor: theme.cardBg, 
-                        borderColor: theme.border, 
-                        borderRadius: theme.radius,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }} 
-                    className="p-5 border backdrop-blur-md"
-                >
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Jugadores ({gameState.players.length})</h3>
-                        <Users size={16} color={theme.accent} />
-                    </div>
-                    <div className="space-y-2 mb-4">
-                        {gameState.players.map(p => (
-                            <div key={p.id} style={{ backgroundColor: theme.border }} className="flex justify-between items-center p-3 rounded-lg">
-                                <span style={{ color: theme.text }} className="font-bold">{p.name}</span>
-                                <button onClick={() => removePlayer(p.id)} style={{ color: theme.sub }} className="hover:text-red-500 transition-colors">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <input 
-                            value={newPlayerName}
-                            onChange={(e) => setNewPlayerName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                            placeholder="Nuevo Jugador..."
-                            className="flex-1 rounded-lg px-4 py-3 outline-none text-sm font-bold border border-transparent focus:border-white/30 transition-colors placeholder:text-inherit placeholder:opacity-40"
-                            style={{ backgroundColor: theme.border, color: theme.text }}
-                        />
-                        <button 
-                            onClick={addPlayer}
-                            style={{ backgroundColor: theme.accent }}
-                            className="px-4 rounded-lg text-white font-bold"
-                        >
-                            <Check />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Settings Section */}
-                <div 
-                    style={{ 
-                        backgroundColor: theme.cardBg, 
-                        borderColor: theme.border, 
-                        borderRadius: theme.radius,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }} 
-                    className="p-5 border backdrop-blur-md space-y-6"
-                >
+    const renderSetup = () => {
+        const isValidToStart = gameState.players.length >= 3;
+        return (
+            <div className={`flex flex-col h-full relative z-10 animate-in fade-in duration-500 pt-[env(safe-area-inset-top)] ${isPixelating ? 'animate-dissolve' : ''}`}>
+                {/* Main Content */}
+                <div className="flex-1 overflow-y-auto px-6 pb-48 space-y-6">
                     
-                    {/* Impostor Count */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Impostores</p>
+                    {/* Header - Now inside scrollable area */}
+                    <header className="pt-6 text-center space-y-2 mb-2">
+                        <h1 style={{ color: theme.text, fontFamily: theme.font }} className="text-5xl font-black italic tracking-tighter">IMPOSTOR</h1>
+                    </header>
+
+                    {/* Players Section */}
+                    <div 
+                        style={{ 
+                            backgroundColor: theme.cardBg, 
+                            borderColor: theme.border, 
+                            borderRadius: theme.radius,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }} 
+                        className="p-5 border backdrop-blur-md"
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Jugadores ({gameState.players.length})</h3>
+                            <Users size={16} color={theme.accent} />
                         </div>
-                        <div style={{ backgroundColor: theme.border }} className="flex items-center gap-4 rounded-lg p-1">
+                        <div className="space-y-2 mb-4">
+                            {gameState.players.map(p => (
+                                <div key={p.id} style={{ backgroundColor: theme.border }} className="flex justify-between items-center p-3 rounded-lg">
+                                    <span style={{ color: theme.text }} className="font-bold">{p.name}</span>
+                                    <button onClick={() => removePlayer(p.id)} style={{ color: theme.sub }} className="hover:text-red-500 transition-colors">
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <input 
+                                value={newPlayerName}
+                                onChange={(e) => setNewPlayerName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
+                                placeholder="Nuevo Jugador..."
+                                className="flex-1 rounded-lg px-4 py-3 outline-none text-sm font-bold border border-transparent focus:border-white/30 transition-colors placeholder:text-inherit placeholder:opacity-40"
+                                style={{ backgroundColor: theme.border, color: theme.text }}
+                            />
                             <button 
-                                onClick={() => setGameState(prev => ({...prev, impostorCount: Math.max(1, prev.impostorCount - 1)}))}
-                                style={{ color: theme.text }}
-                                className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
-                            >-</button>
-                            <span style={{ color: theme.text }} className="font-bold w-4 text-center">{gameState.impostorCount}</span>
-                            <button 
-                                onClick={() => setGameState(prev => ({...prev, impostorCount: Math.min(gameState.players.length - 1, prev.impostorCount + 1)}))}
-                                style={{ color: theme.text }}
-                                className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
-                            >+</button>
+                                onClick={addPlayer}
+                                style={{ backgroundColor: theme.accent }}
+                                className="px-4 rounded-lg text-white font-bold"
+                            >
+                                <Check />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Toggles */}
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <p style={{ color: theme.text }} className="text-sm font-bold">Modo Pista</p>
-                            <p style={{ color: theme.sub }} className="text-[10px]">El impostor recibe una pista genérica</p>
+                    {/* Settings Section */}
+                    <div 
+                        style={{ 
+                            backgroundColor: theme.cardBg, 
+                            borderColor: theme.border, 
+                            borderRadius: theme.radius,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }} 
+                        className="p-5 border backdrop-blur-md space-y-6"
+                    >
+                        
+                        {/* Impostor Count */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Impostores</p>
+                            </div>
+                            <div style={{ backgroundColor: theme.border }} className="flex items-center gap-4 rounded-lg p-1">
+                                <button 
+                                    onClick={() => setGameState(prev => ({...prev, impostorCount: Math.max(1, prev.impostorCount - 1)}))}
+                                    style={{ color: theme.text }}
+                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
+                                >-</button>
+                                <span style={{ color: theme.text }} className="font-bold w-4 text-center">{gameState.impostorCount}</span>
+                                <button 
+                                    onClick={() => setGameState(prev => ({...prev, impostorCount: Math.min(gameState.players.length - 1, prev.impostorCount + 1)}))}
+                                    style={{ color: theme.text }}
+                                    className="w-8 h-8 flex items-center justify-center font-bold hover:opacity-70 rounded"
+                                >+</button>
+                            </div>
                         </div>
+
+                        {/* Toggles */}
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <p style={{ color: theme.text }} className="text-sm font-bold">Modo Pista</p>
+                                <p style={{ color: theme.sub }} className="text-[10px]">El impostor recibe una pista genérica</p>
+                            </div>
+                            <button 
+                                onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, hintMode: !prev.settings.hintMode}}))}
+                                style={{ backgroundColor: gameState.settings.hintMode ? theme.accent : theme.border }}
+                                className="w-12 h-6 rounded-full relative transition-colors"
+                            >
+                                <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.hintMode ? 'left-7' : 'left-1'}`} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                             <div className="space-y-1">
+                                <p style={{ color: theme.text }} className="text-sm font-bold flex items-center gap-2">
+                                    Modo Troll <Ghost size={12}/>
+                                </p>
+                                <p style={{ color: theme.sub }} className="text-[10px]">15% prob. Caos Total</p>
+                            </div>
+                             <button 
+                                onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, trollMode: !prev.settings.trollMode}}))}
+                                style={{ backgroundColor: gameState.settings.trollMode ? theme.accent : theme.border }}
+                                className="w-12 h-6 rounded-full relative transition-colors"
+                            >
+                                <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.trollMode ? 'left-7' : 'left-1'}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Categories Button */}
+                    <button 
+                        onClick={() => setCategoriesOpen(true)}
+                        style={{ 
+                            borderColor: theme.border, 
+                            color: theme.text, 
+                            backgroundColor: theme.cardBg, 
+                            borderRadius: theme.radius,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
+                    >
+                        <LayoutGrid size={16} /> Categorías de palabras
+                    </button>
+
+                    {/* Settings Drawer Button */}
+                    <button 
+                        onClick={() => setSettingsOpen(true)}
+                        style={{ 
+                            borderColor: theme.border, 
+                            color: theme.sub,
+                            backgroundColor: theme.border,
+                            borderRadius: theme.radius,
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                        className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
+                    >
+                        <Settings size={16} /> Ajustes
+                    </button>
+
+                </div>
+
+                {/* Start Button Container */}
+                <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-20 pointer-events-none flex justify-center items-center">
+                    <div className="relative w-full max-w-xs group">
+                        {/* AURA EFFECT - External Glow only */}
+                        {isValidToStart && (
+                            <>
+                                {/* Deep Pulse Glow */}
+                                <div
+                                    className="absolute inset-1 rounded-full opacity-50 blur-xl"
+                                    style={{
+                                        backgroundColor: theme.accent,
+                                        animation: 'aura-pulse 2s ease-in-out infinite'
+                                    }}
+                                />
+                            </>
+                        )}
+
                         <button 
-                            onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, hintMode: !prev.settings.hintMode}}))}
-                            style={{ backgroundColor: gameState.settings.hintMode ? theme.accent : theme.border }}
-                            className="w-12 h-6 rounded-full relative transition-colors"
+                            onClick={startGame}
+                            disabled={!isValidToStart}
+                            style={{ 
+                                backgroundColor: !isValidToStart ? 'gray' : theme.accent,
+                                // Subtle border shadow for definition
+                                boxShadow: '0 0 0 1px rgba(255,255,255,0.1)'
+                            }}
+                            className="w-full py-3.5 relative z-10 text-white font-black text-base active:scale-95 transition-all flex items-center justify-center gap-3 pointer-events-auto rounded-full overflow-hidden"
                         >
-                            <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.hintMode ? 'left-7' : 'left-1'}`} />
-                        </button>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                         <div className="space-y-1">
-                            <p style={{ color: theme.text }} className="text-sm font-bold flex items-center gap-2">
-                                Modo Troll <Ghost size={12}/>
-                            </p>
-                            <p style={{ color: theme.sub }} className="text-[10px]">15% prob. Caos Total</p>
-                        </div>
-                         <button 
-                            onClick={() => setGameState(prev => ({...prev, settings: {...prev.settings, trollMode: !prev.settings.trollMode}}))}
-                            style={{ backgroundColor: gameState.settings.trollMode ? theme.accent : theme.border }}
-                            className="w-12 h-6 rounded-full relative transition-colors"
-                        >
-                            <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.trollMode ? 'left-7' : 'left-1'}`} />
+                            {/* Internal Clean Shimmer */}
+                            {isValidToStart && (
+                                <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite]" 
+                                     style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }} 
+                                />
+                            )}
+                            
+                            <span className="relative z-10 flex items-center gap-3">
+                                EMPEZAR PARTIDA <ChevronRight strokeWidth={4} size={20} />
+                            </span>
                         </button>
                     </div>
                 </div>
-
-                {/* Categories Button */}
-                <button 
-                    onClick={() => setCategoriesOpen(true)}
-                    style={{ 
-                        borderColor: theme.border, 
-                        color: theme.text, 
-                        backgroundColor: theme.cardBg, 
-                        borderRadius: theme.radius,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
-                >
-                    <LayoutGrid size={16} /> Categorías de palabras
-                </button>
-
-                {/* Settings Drawer Button */}
-                <button 
-                    onClick={() => setSettingsOpen(true)}
-                    style={{ 
-                        borderColor: theme.border, 
-                        color: theme.sub,
-                        backgroundColor: theme.border,
-                        borderRadius: theme.radius,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
-                >
-                    <Settings size={16} /> Ajustes
-                </button>
-
             </div>
-
-            {/* Start Button */}
-            <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-20 pointer-events-none flex justify-center">
-                <button 
-                    onClick={startGame}
-                    disabled={gameState.players.length < 3}
-                    style={{ 
-                        backgroundColor: gameState.players.length < 3 ? 'gray' : theme.accent,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-                    }}
-                    className="w-full max-w-xs py-3.5 text-white font-black text-base active:scale-95 transition-transform flex items-center justify-center gap-3 pointer-events-auto rounded-full"
-                >
-                    EMPEZAR PARTIDA <ChevronRight strokeWidth={4} size={20} />
-                </button>
-            </div>
-        </div>
-    );
+        );
+    };
 
     const renderReveal = () => {
         // Deterministic color based on player index
         const cardColor = PLAYER_COLORS[gameState.currentPlayerIndex % PLAYER_COLORS.length];
         const isLastPlayer = gameState.currentPlayerIndex === gameState.players.length - 1;
 
+        // Aura Expansion Effect
+        // Creates a massive explosion of the player's color when transition starts
+        const auraExplosion = isExiting && (
+            <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none">
+                <div 
+                    style={{
+                        backgroundColor: cardColor,
+                        animation: 'aura-expand 0.6s ease-out forwards',
+                    }}
+                    className="w-64 h-64 rounded-full blur-3xl opacity-80"
+                />
+            </div>
+        );
+
         return (
-            <div className="flex flex-col h-full items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10 overflow-hidden">
+            <div className="flex flex-col h-full items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10">
+                {auraExplosion}
+                
                 <div 
                     key={gameState.currentPlayerIndex} // Key ensures remount on index change for entry anim
                     className={`w-full max-w-sm flex flex-col items-center ${isExiting ? 'card-exit' : 'card-enter'}`}
@@ -341,18 +406,25 @@ function App() {
                      <p style={{ color: theme.sub }} className="text-[10px] uppercase tracking-widest">
                         Jugador {gameState.currentPlayerIndex + 1} de {gameState.players.length}
                     </p>
-                    <div className="flex gap-1 justify-center">
-                        {gameState.players.map((_, i) => (
-                            <div 
-                                key={i} 
-                                style={{ 
-                                    backgroundColor: i <= gameState.currentPlayerIndex 
-                                        ? PLAYER_COLORS[i % PLAYER_COLORS.length] 
-                                        : 'rgba(255,255,255,0.2)' 
-                                }}
-                                className={`w-2 h-2 rounded-full transition-colors`}
-                            />
-                        ))}
+                    {/* Light Echo Indicator */}
+                    <div className="flex gap-2 justify-center items-center h-4">
+                        {gameState.players.map((_, i) => {
+                            const isActive = i === gameState.currentPlayerIndex;
+                            const isPast = i < gameState.currentPlayerIndex;
+                            return (
+                                <div 
+                                    key={i} 
+                                    style={{ 
+                                        backgroundColor: isActive || isPast
+                                            ? PLAYER_COLORS[i % PLAYER_COLORS.length] 
+                                            : 'rgba(255,255,255,0.2)',
+                                        animation: isActive ? 'echo-pulse 2s cubic-bezier(0, 0, 0.2, 1) infinite' : 'none',
+                                        boxShadow: isActive ? `0 0 10px ${PLAYER_COLORS[i % PLAYER_COLORS.length]}` : 'none'
+                                    }}
+                                    className={`rounded-full transition-all duration-500 ${isActive ? 'w-3 h-3' : 'w-1.5 h-1.5'}`}
+                                />
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -389,6 +461,13 @@ function App() {
                             filter: blur(4px);
                         }
                     }
+
+                    /* Aura Expansion - Explodes from center */
+                    @keyframes aura-expand {
+                        0% { transform: scale(0.5); opacity: 0; }
+                        30% { opacity: 0.6; }
+                        100% { transform: scale(20); opacity: 0; }
+                    }
                 `}</style>
             </div>
         );
@@ -399,11 +478,6 @@ function App() {
         const impostors = gameState.gameData.filter(p => p.isImp);
         const civilWord = gameState.gameData.find(p => !p.isImp)?.realWord ?? "ERROR";
         
-        // Handle Troll Event logic for display
-        // If Troll Event, everyone is impostor, but 'realWord' property in gameData is marked 'TROLL'.
-        // However, visually we want to show that everyone was tricked if needed, 
-        // but the prompt asks for standard structure: "Word was XX" and "XX was Impostor".
-        
         let impostorText = "";
         if (gameState.isTrollEvent) {
              impostorText = "¡TODOS ERAIS IMPOSTORES!";
@@ -411,20 +485,17 @@ function App() {
              impostorText = `${impostors[0].name} era el impostor`;
         } else {
              const names = impostors.map(p => p.name);
-             // Join with commas and 'y' for the last one
              impostorText = names.length > 1 
                 ? `${names.slice(0, -1).join(", ")} y ${names.slice(-1)} eran los impostores`
                 : `${names[0]} era el impostor`;
         }
 
-        // Hint Logic: In normal mode, if Hint Mode is ON, get the hint.
-        // The hint is stored in the impostor's "word" as "PISTA: [Hint]"
         const hintUsed = gameState.settings.hintMode && !gameState.isTrollEvent && impostors.length > 0
             ? impostors[0].word.replace("PISTA: ", "")
             : null;
 
         return (
-            <div className="flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500">
+            <div className={`flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500 ${isPixelating ? 'animate-dissolve' : ''}`}>
                 <header className="mb-4 text-center">
                     <h2 style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black italic">INFORME</h2>
                     {showResults && gameState.isTrollEvent && (
@@ -438,7 +509,7 @@ function App() {
                 <div 
                     style={{ 
                         backgroundColor: theme.cardBg, 
-                        borderColor: theme.border,
+                        borderColor: theme.border, 
                         borderRadius: theme.radius,
                     }} 
                     className="mb-10 w-full max-w-sm border backdrop-blur-md relative overflow-hidden group shadow-lg"
@@ -472,10 +543,24 @@ function App() {
                 <div className="flex-1 flex flex-col items-center justify-center pb-32">
                     
                     {!showResults ? (
-                        /* Locked State */
-                        <div className="flex flex-col items-center gap-6 opacity-50 animate-pulse">
-                            <Lock size={64} style={{ color: theme.sub }} />
-                            <p style={{ color: theme.sub }} className="text-sm font-black uppercase tracking-widest text-center">
+                        /* Locked State with Latent Suspense */
+                        <div 
+                            className="flex flex-col items-center gap-6 opacity-50"
+                            style={{
+                                animation: isHoldingReveal ? 'heartbeat 0.75s infinite ease-in-out' : 'pulse 3s infinite ease-in-out'
+                            }}
+                        >
+                            <Lock 
+                                size={64} 
+                                style={{ 
+                                    color: isHoldingReveal ? theme.accent : theme.sub,
+                                    filter: isHoldingReveal ? `drop-shadow(0 0 10px ${theme.accent})` : 'none'
+                                }} 
+                            />
+                            <p 
+                                style={{ color: isHoldingReveal ? theme.text : theme.sub }} 
+                                className="text-sm font-black uppercase tracking-widest text-center transition-colors duration-200"
+                            >
                                 EXPEDIENTE CLASIFICADO<br/>
                                 <span className="text-[10px] opacity-70">Mantén para desclasificar</span>
                             </p>
@@ -540,7 +625,9 @@ function App() {
                                 className={`absolute left-0 top-0 bottom-0 bg-black/10 transition-all ease-linear`}
                                 style={{ 
                                     width: isHoldingReveal ? '100%' : '0%',
-                                    transitionDuration: isHoldingReveal ? '800ms' : '0ms'
+                                    transitionDuration: isHoldingReveal ? '800ms' : '0ms',
+                                    filter: isHoldingReveal ? 'blur(2px) brightness(2)' : 'none',
+                                    backgroundColor: isHoldingReveal ? theme.accent : 'rgba(0,0,0,0.1)'
                                 }}
                             />
                             <Eye size={18} className="relative z-10" />
@@ -550,19 +637,22 @@ function App() {
 
                     <div className="grid grid-cols-2 gap-3 w-full max-w-xs pointer-events-auto">
                         <button 
-                            onClick={startGame}
+                            onClick={handleReplay}
                             style={{ 
                                 backgroundColor: showResults ? theme.accent : theme.cardBg, 
                                 color: showResults ? 'white' : theme.text,
                                 borderColor: theme.border
                             }}
-                            className={`w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'}`}
+                            className={`relative overflow-hidden w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'} transform-gpu`}
                         >
-                            <RotateCcw size={16} /> <span className="text-[10px]">Volver a Jugar</span>
+                            {/* Inner Bg Mask */}
+                            <div className="absolute inset-[1px] rounded-[15px] z-0" style={{ backgroundColor: showResults ? theme.accent : theme.cardBg }} />
+
+                            <span className="relative z-10 flex items-center gap-2"><RotateCcw size={16} /> <span className="text-[10px]">Volver a Jugar</span></span>
                         </button>
                         
                         <button 
-                            onClick={() => setGameState(prev => ({...prev, phase: 'setup'}))}
+                            onClick={handleBackToSetup}
                             style={{ 
                                 backgroundColor: theme.cardBg,
                                 borderColor: theme.border, 
@@ -667,7 +757,7 @@ function App() {
 
     return (
         <div style={{ backgroundColor: theme.bg, color: theme.text }} className="w-full h-full relative overflow-hidden transition-colors duration-700">
-            <Background theme={theme} />
+            <Background theme={theme} phase={gameState.phase} isTroll={gameState.isTrollEvent} />
             
             {gameState.phase === 'setup' && renderSetup()}
             {gameState.phase === 'revealing' && renderReveal()}
@@ -675,6 +765,47 @@ function App() {
             
             {renderDrawer()}
             {renderCategories()}
+            
+            {/* Global Keyframes for new effects */}
+            <style>{`
+                @keyframes particle-flow {
+                    0% { background-position: 0 0; }
+                    100% { background-position: 20px 20px; }
+                }
+                @keyframes echo-pulse {
+                    0% { box-shadow: 0 0 0 0px currentColor; opacity: 1; transform: scale(1.2); }
+                    70% { box-shadow: 0 0 0 10px transparent; opacity: 1; transform: scale(1); }
+                    100% { box-shadow: 0 0 0 0 transparent; opacity: 1; transform: scale(1); }
+                }
+                @keyframes heartbeat {
+                    0% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+                    15% { transform: scale(1.1); text-shadow: 0 0 20px currentColor; }
+                    30% { transform: scale(1); text-shadow: 0 0 10px currentColor; }
+                    45% { transform: scale(1.1); text-shadow: 0 0 20px currentColor; }
+                    60% { transform: scale(1); text-shadow: 0 0 0 transparent; }
+                }
+                @keyframes dissolve {
+                    0% { filter: blur(0px) brightness(1); opacity: 1; transform: scale(1); }
+                    50% { filter: blur(4px) brightness(1.5); opacity: 0.8; transform: scale(1.02); }
+                    100% { filter: blur(20px) brightness(5); opacity: 0; transform: scale(1.1); }
+                }
+                .animate-dissolve {
+                    animation: dissolve 0.8s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+                }
+                
+                /* Aura Button Effects */
+                @keyframes aura-spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                @keyframes aura-pulse {
+                    0%, 100% { transform: scale(0.95); opacity: 0.5; }
+                    50% { transform: scale(1.05); opacity: 0.8; }
+                }
+                @keyframes shimmer {
+                    100% { transform: translateX(100%); }
+                }
+            `}</style>
         </div>
     );
 }
