@@ -30,8 +30,10 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
         if (navigator.vibrate) navigator.vibrate(pattern);
     };
 
-    const handlePointerDown = () => {
-        // Removed the check for readyForNext so users can re-check their role if needed
+    const handlePointerDown = (e: React.PointerEvent) => {
+        // Prevent default to avoid text selection or native behavior interference
+        e.preventDefault();
+        
         setIsHolding(true);
         setHasInteracted(true);
         onRevealStart();
@@ -49,7 +51,8 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
         }, 300);
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: React.PointerEvent) => {
+        e.preventDefault();
         setIsHolding(false);
         onRevealEnd();
         if (holdTimer.current) {
@@ -89,7 +92,8 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                     boxShadow: isHolding ? `0 0 50px ${color}40` : '0 10px 30px rgba(0,0,0,0.5)',
                     transform: isHolding ? 'scale(1.02)' : 'scale(1)', // Only scale, no rotate
                     transition: 'all 0.3s ease',
-                    animation: (!isHolding && !hasInteracted) ? 'breathe 4s ease-in-out infinite' : 'none'
+                    animation: (!isHolding && !hasInteracted) ? 'breathe 4s ease-in-out infinite' : 'none',
+                    touchAction: 'none' // Crucial for preventing browser gestures on the card
                 }}
                 className="w-full aspect-[3/4] border-2 relative overflow-hidden cursor-pointer select-none touch-none"
             >
@@ -177,13 +181,21 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
             {/* Next Button */}
             <div className="h-16 w-full flex items-center justify-center">
                 <button
-                    onClick={nextAction}
+                    onPointerDown={(e) => {
+                        // CRITICAL FIX: Use onPointerDown for instant PWA reaction
+                        if (isButtonVisible) {
+                            e.preventDefault(); // Stop ghost clicks
+                            e.stopPropagation();
+                            nextAction();
+                        }
+                    }}
                     disabled={!isButtonVisible}
                     style={{ 
                         backgroundColor: color,
                         opacity: isButtonVisible ? 1 : 0,
                         transform: isButtonVisible ? 'scale(1)' : 'scale(0.95)',
-                        pointerEvents: isButtonVisible ? 'auto' : 'none'
+                        pointerEvents: isButtonVisible ? 'auto' : 'none',
+                        touchAction: 'manipulation' // Prevents double-tap zoom delay
                     }}
                     className="w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 rounded-full"
                 >
