@@ -64,6 +64,9 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
         return '3rem';
     };
 
+    // Determine button visibility state
+    const isButtonVisible = readyForNext && !isHolding;
+
     return (
         <div className="flex flex-col items-center gap-8 w-full max-w-sm z-10">
             {/* Header */}
@@ -173,16 +176,20 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
 
             {/* Next Button */}
             <div className="h-16 w-full flex items-center justify-center">
-                {readyForNext && !isHolding && (
-                    <button
-                        onClick={nextAction}
-                        style={{ backgroundColor: color }}
-                        className="w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 rounded-full"
-                    >
-                        <span>{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
-                        {isLastPlayer ? <Play size={20} fill="currentColor" /> : <Eye size={20} />}
-                    </button>
-                )}
+                <button
+                    onClick={nextAction}
+                    disabled={!isButtonVisible}
+                    style={{ 
+                        backgroundColor: color,
+                        opacity: isButtonVisible ? 1 : 0,
+                        transform: isButtonVisible ? 'scale(1)' : 'scale(0.95)',
+                        pointerEvents: isButtonVisible ? 'auto' : 'none'
+                    }}
+                    className="w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 rounded-full"
+                >
+                    <span>{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
+                    {isLastPlayer ? <Play size={20} fill="currentColor" /> : <Eye size={20} />}
+                </button>
             </div>
 
             <style>{`
