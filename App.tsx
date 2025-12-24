@@ -165,7 +165,7 @@ function App() {
                         backgroundColor: theme.cardBg, 
                         borderColor: theme.border, 
                         borderRadius: theme.radius,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }} 
                     className="p-5 border backdrop-blur-md"
                 >
@@ -208,7 +208,7 @@ function App() {
                         backgroundColor: theme.cardBg, 
                         borderColor: theme.border, 
                         borderRadius: theme.radius,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }} 
                     className="p-5 border backdrop-blur-md space-y-6"
                 >
@@ -273,7 +273,7 @@ function App() {
                         color: theme.text, 
                         backgroundColor: theme.cardBg, 
                         borderRadius: theme.radius,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                     className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
                 >
@@ -288,7 +288,7 @@ function App() {
                         color: theme.sub,
                         backgroundColor: theme.border,
                         borderRadius: theme.radius,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}
                     className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
                 >
