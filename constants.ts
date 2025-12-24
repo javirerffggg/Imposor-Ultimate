@@ -192,8 +192,45 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
         font: "'Inter', sans-serif", 
         border: "rgba(255, 255, 255, 0.2)",
         particleType: 'circle'
+    },
+    nightclub: {
+        name: "Nightclub",
+        bg: "#1a0033",
+        cardBg: "rgba(26, 0, 51, 0.85)",
+        accent: "#ff00ff", // Neon Fuchsia
+        text: "#00ffff", // Cyan
+        sub: "#d1d5db",
+        radius: "1.5rem",
+        font: "'Inter', sans-serif",
+        border: "rgba(255, 0, 255, 0.5)",
+        particleType: 'circle'
     }
 };
+
+export const DRINKING_PROMPTS = [
+    // Eventos de Atributos y Estado
+    "¡El jugador con menos porcentaje de batería, bebe un trago!",
+    "¡El jugador que lleve más tiempo sin ser Impostor, bebe un trago!",
+    "¡Cualquier jugador que lleve zapatillas blancas, bebe un trago!",
+    "¡El jugador con el nombre más corto de la lista, bebe un trago!",
+    "¡El jugador que tenga el móvil más nuevo, bebe un trago!",
+    "¡Cualquier jugador que lleve gafas (de ver o de sol), bebe un trago!",
+    "¡El jugador que esté sentado a la derecha del dueño del móvil, bebe un trago!",
+    "¡Cualquier jugador que tenga un tatuaje a la vista, bebe un trago!",
+    "¡El jugador que haya enviado el último WhatsApp del grupo, bebe un trago!",
+
+    // 🇪🇸 Localización "Fiesta Española"
+    "¡Cualquier jugador que lleve una prenda de Zara o Pull and Bear, bebe un trago!",
+    "¡El jugador que haya llegado el último a la fiesta, bebe un trago!",
+    "¡Cualquier jugador que prefiera la tortilla SIN cebolla, bebe un trago por pecador!",
+    "¡Si has dicho la palabra 'literal' o 'en plan' hoy, bebe un trago!",
+    "¡El jugador que tenga la caña o el vaso más vacío, bebe un trago!",
+    "¡Cualquier jugador que lleve algo de color negro, bebe un trago!",
+    "¡El jugador que tenga más alarmas puestas para mañana, bebe un trago!",
+    "¡Si has mencionado un bar en tu descripción, bebe un trago!",
+    "¡Cualquier jugador que tenga una foto de su perro en el móvil, bebe un trago!",
+    "¡El jugador que más veces haya dicho 'es que' en esta ronda, bebe un trago!"
+];
 
 export const DEFAULT_PLAYERS = ["Agente 1", "Agente 2", "Agente 3", "Agente 4"];
 

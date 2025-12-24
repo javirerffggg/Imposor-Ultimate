@@ -1,4 +1,4 @@
-export type ThemeName = 'midnight' | 'obsidian' | 'solar' | 'cyber' | 'bond' | 'turing' | 'illojuan' | 'material' | 'zenith' | 'protocol' | 'ethereal' | 'terminal84' | 'soft' | 'noir' | 'paper' | 'space';
+export type ThemeName = 'midnight' | 'obsidian' | 'solar' | 'cyber' | 'bond' | 'turing' | 'illojuan' | 'material' | 'zenith' | 'protocol' | 'ethereal' | 'terminal84' | 'soft' | 'noir' | 'paper' | 'space' | 'nightclub';
 
 export interface ThemeConfig {
     name: string;
@@ -27,7 +27,7 @@ export interface GamePlayer extends Player {
 }
 
 export interface GameState {
-    phase: 'setup' | 'revealing' | 'results';
+    phase: 'setup' | 'revealing' | 'discussion' | 'results';
     players: Player[];
     gameData: GamePlayer[];
     impostorCount: number;
@@ -41,8 +41,10 @@ export interface GameState {
     settings: {
         hintMode: boolean;
         trollMode: boolean;
+        partyMode: boolean;
         selectedCategories: string[];
     };
+    currentDrinkingPrompt: string;
     theme: ThemeName;
 }
 

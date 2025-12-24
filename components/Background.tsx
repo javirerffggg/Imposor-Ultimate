@@ -5,10 +5,11 @@ interface BackgroundProps {
     theme: ThemeConfig;
     phase?: string;
     isTroll?: boolean;
+    isParty?: boolean;
     activeColor?: string;
 }
 
-export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, activeColor }) => {
+export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, isParty, activeColor }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -39,6 +40,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
             opacity: number;
             originalSpeedY: number;
             trail: {x: number, y: number, opacity: number}[]; // For Cyber theme
+            hue: number; // For Party Mode
 
             constructor() {
                 this.x = Math.random() * canvas!.width;
@@ -62,6 +64,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
                 }
                 this.opacity = Math.random() * 0.5 + 0.1;
                 this.trail = [];
+                this.hue = Math.random() * 360;
             }
 
             update() {
@@ -69,6 +72,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
                 let speedMultiplier = 1;
                 if (phase === 'revealing') speedMultiplier = 0.5; // Suspense
                 if (isTroll) speedMultiplier = 4.0; // Chaos
+                if (isParty) speedMultiplier = 2.0; // Party Energy
 
                 // Store trail for Cyber theme
                 if (theme.name === "Night City") {
@@ -82,6 +86,14 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
                 if (isTroll) {
                      // Add chaotic jitter in Troll mode
                      this.x += (Math.random() - 0.5) * 2;
+                }
+                
+                // Party Mode Jitter (Disco lights effect)
+                if (isParty) {
+                    this.hue = (this.hue + 5) % 360;
+                    if (Math.random() > 0.95) {
+                        this.x += (Math.random() - 0.5) * 10;
+                    }
                 }
 
                 if (this.y > canvas!.height) {
@@ -100,8 +112,10 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
                 // Logic for Colors
                 let drawColor = theme.accent;
 
-                // Priority: Player Color (Reveal Phase) > Troll > Theme Specifics
-                if (phase === 'revealing' && activeColor) {
+                // Priority: Party Mode > Player Color > Troll > Theme Specifics
+                if (isParty) {
+                    drawColor = `hsl(${this.hue}, 100%, 60%)`;
+                } else if (phase === 'revealing' && activeColor) {
                     drawColor = activeColor;
                 } else if (isTroll) {
                      // Flicker color in troll mode
@@ -131,7 +145,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
                 }
 
                 // Cyber Theme: Data Snow Trails
-                if (theme.name === "Night City" && this.trail.length > 0) {
+                if (theme.name === "Night City" && this.trail.length > 0 && !isParty) {
                     for (let i = 0; i < this.trail.length; i++) {
                         const point = this.trail[i];
                         const trailOpacity = (i / this.trail.length) * this.opacity * 0.5;
@@ -152,8 +166,8 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
 
         const initParticles = () => {
             particles = [];
-            // Increase density in Troll mode
-            const count = (theme.particleType === 'circle' ? 60 : 100) * (isTroll ? 2 : 1);
+            // Increase density in Troll mode or Party Mode
+            const count = (theme.particleType === 'circle' ? 60 : 100) * (isTroll || isParty ? 2 : 1);
             for (let i = 0; i < count; i++) {
                 particles.push(new Particle());
             }
@@ -177,7 +191,7 @@ export const Background: React.FC<BackgroundProps> = ({ theme, phase, isTroll, a
             cancelAnimationFrame(animationFrameId);
             window.removeEventListener('resize', resize);
         };
-    }, [theme, phase, isTroll, activeColor]);
+    }, [theme, phase, isTroll, activeColor, isParty]);
 
     return (
         <canvas 

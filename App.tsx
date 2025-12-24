@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock, Fingerprint, Save, Trash2, Database } from 'lucide-react';
+import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock, Fingerprint, Save, Trash2, Database, Beer, PartyPopper, MessageCircle } from 'lucide-react';
 import { Background } from './components/Background';
 import { IdentityCard } from './components/IdentityCard';
+import { PartyNotification } from './components/PartyNotification'; // New Import
 import { generateGameData } from './utils/gameLogic';
-import { THEMES, DEFAULT_PLAYERS, PLAYER_COLORS } from './constants';
+import { THEMES, DEFAULT_PLAYERS, PLAYER_COLORS, DRINKING_PROMPTS } from './constants';
 import { CATEGORIES_DATA } from './categories';
 import { GameState, ThemeName, Player } from './types';
 
@@ -24,9 +25,11 @@ function App() {
         history: { lastImpostorIds: [], lastWords: [] },
         settings: {
             hintMode: false,
-            trollMode: false, // El modo troll no viene activado por defecto
+            trollMode: false,
+            partyMode: false,
             selectedCategories: []
         },
+        currentDrinkingPrompt: "",
         theme: 'illojuan'
     });
 
@@ -74,7 +77,39 @@ function App() {
         return () => clearTimeout(timer);
     }, [isHoldingReveal, showResults]);
 
+    // Party Mode Timer: Updates drinking prompt every 2 minutes
+    useEffect(() => {
+        if (!gameState.settings.partyMode) return;
+
+        const interval = setInterval(() => {
+            setGameState(prev => {
+                // Only update prompt if we are in an active game phase where prompts are visible
+                if (prev.phase === 'setup' || prev.phase === 'revealing') return prev;
+
+                // Pick a NEW prompt that is different from the current one to ensure change detection
+                let newPrompt = "";
+                do {
+                    newPrompt = DRINKING_PROMPTS[Math.floor(Math.random() * DRINKING_PROMPTS.length)];
+                } while (newPrompt === prev.currentDrinkingPrompt && DRINKING_PROMPTS.length > 1);
+                
+                // Strong vibration to alert players of the new rule
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+
+                return {
+                    ...prev,
+                    currentDrinkingPrompt: newPrompt
+                };
+            });
+        }, 120000); // 120,000 ms = 2 minutes
+
+        return () => clearInterval(interval);
+    }, [gameState.settings.partyMode]);
+
     // -- Handlers --
+
+    const getRandomDrinkingPrompt = () => {
+        return DRINKING_PROMPTS[Math.floor(Math.random() * DRINKING_PROMPTS.length)];
+    };
 
     const startGame = () => {
         if (gameState.players.length < 3) return;
@@ -104,7 +139,8 @@ function App() {
             history: {
                 lastImpostorIds: newImpostors,
                 lastWords: newHistoryWords
-            }
+            },
+            currentDrinkingPrompt: "" // Clear prompt on start
         }));
         setHasSeenCurrentCard(false);
         setShowResults(false);
@@ -125,9 +161,33 @@ function App() {
                 setGameState(prev => ({ ...prev, currentPlayerIndex: prev.currentPlayerIndex + 1 }));
                 setHasSeenCurrentCard(false);
             } else {
-                setGameState(prev => ({ ...prev, phase: 'results' }));
+                // ALL PLAYERS REVEALED -> GO TO DISCUSSION (Interrogation)
+                // Set Drinking Prompt if Party Mode is active
+                const nextPrompt = gameState.settings.partyMode ? getRandomDrinkingPrompt() : "";
+                
+                setGameState(prev => ({ 
+                    ...prev, 
+                    phase: 'discussion',
+                    currentDrinkingPrompt: nextPrompt
+                }));
             }
             // Reset exit state (this triggers the enter animation for the new component)
+            setIsExiting(false);
+        }, 300);
+    };
+
+    const handleEndDiscussion = () => {
+        // Transition from Discussion to Results
+        setIsExiting(true);
+        setTimeout(() => {
+             // In Party Mode, refresh prompt for results
+             const nextPrompt = gameState.settings.partyMode ? getRandomDrinkingPrompt() : "";
+
+            setGameState(prev => ({ 
+                ...prev, 
+                phase: 'results',
+                currentDrinkingPrompt: nextPrompt
+            }));
             setIsExiting(false);
         }, 300);
     };
@@ -203,10 +263,29 @@ function App() {
         }));
     };
 
+    // Toggle Party Mode
+    const togglePartyMode = () => {
+        setGameState(prev => {
+            const newPartyMode = !prev.settings.partyMode;
+            // Activate Nightclub theme if party mode is on
+            if (newPartyMode) {
+                setThemeName('nightclub');
+            } else {
+                setThemeName('illojuan'); // Revert to default or logic to keep current? Let's revert for clarity
+            }
+            return {
+                ...prev,
+                settings: { ...prev.settings, partyMode: newPartyMode }
+            };
+        });
+    };
+
     // -- Renders --
 
     const renderSetup = () => {
         const isValidToStart = gameState.players.length >= 3;
+        const isParty = gameState.settings.partyMode;
+
         return (
             <div className={`flex flex-col h-full relative z-10 animate-in fade-in duration-500 pt-[env(safe-area-inset-top)] ${isPixelating ? 'animate-dissolve' : ''}`}>
                 {/* Main Content */}
@@ -215,6 +294,7 @@ function App() {
                     {/* Header - Now inside scrollable area */}
                     <header className="pt-6 text-center space-y-2 mb-2">
                         <h1 style={{ color: theme.text, fontFamily: theme.font }} className="text-5xl font-black italic tracking-tighter">IMPOSTOR</h1>
+                        {isParty && <p style={{ color: theme.accent }} className="text-xs font-black uppercase tracking-[0.3em] animate-pulse">DRINKING EDITION</p>}
                     </header>
 
                     {/* Players Section */}
@@ -449,7 +529,7 @@ function App() {
                             )}
                             
                             <span className="relative z-10 flex items-center gap-3">
-                                EMPEZAR PARTIDA <ChevronRight strokeWidth={4} size={20} />
+                                {isParty ? "COMENZAR EL BOTELLÓN" : "EMPEZAR PARTIDA"} <ChevronRight strokeWidth={4} size={20} />
                             </span>
                         </button>
                     </div>
@@ -495,6 +575,7 @@ function App() {
                         nextAction={handleNextPlayer}
                         readyForNext={hasSeenCurrentCard}
                         isLastPlayer={isLastPlayer}
+                        isParty={gameState.settings.partyMode}
                     />
                 </div>
                 
@@ -569,10 +650,98 @@ function App() {
         );
     };
 
+    const renderDiscussion = () => {
+        const isParty = gameState.settings.partyMode;
+        
+        return (
+            <div className={`flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500 ${isExiting ? 'card-exit' : ''}`}>
+                 <header className="mb-4 text-center">
+                    <h2 style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black italic">DEBATE</h2>
+                </header>
+
+                <div className="flex-1 flex flex-col items-center justify-center gap-8">
+                    {/* Start Player Info */}
+                     <div 
+                        style={{ 
+                            backgroundColor: theme.cardBg, 
+                            borderColor: theme.border, 
+                            borderRadius: theme.radius,
+                        }} 
+                        className="w-full max-w-sm border backdrop-blur-md relative overflow-hidden group shadow-lg"
+                    >
+                         <div className="absolute top-0 left-0 right-0 h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />
+
+                        <div className="p-5 flex items-center gap-4">
+                            <div 
+                                className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner relative"
+                                style={{ backgroundColor: theme.bg, borderColor: theme.border, border: '1px solid' }}
+                            >
+                                <div className="absolute inset-0 rounded-full animate-ping opacity-10" style={{ backgroundColor: theme.accent }} />
+                                <Mic size={20} style={{ color: theme.accent }} />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <span style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
+                                    {isParty ? "Comienza a hablar el siguiente alcohólico" : "Comienza a hablar"}
+                                </span>
+                                <span style={{ color: theme.text }} className="text-xl font-black leading-none break-all">
+                                    {gameState.startingPlayer}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* PARTY NOTIFICATION */}
+                    {isParty && gameState.currentDrinkingPrompt && (
+                        // Key forces re-render (and thus TTS + Animation replay) when prompt text changes
+                        <PartyNotification 
+                            key={gameState.currentDrinkingPrompt}
+                            prompt={gameState.currentDrinkingPrompt} 
+                            theme={theme} 
+                        />
+                    )}
+                    
+                    {!isParty && (
+                         <div className="flex flex-col items-center text-center opacity-60">
+                            <MessageCircle size={48} color={theme.sub} className="mb-4" />
+                            <p style={{ color: theme.sub }} className="text-sm">Discutid quién es el impostor.</p>
+                         </div>
+                    )}
+
+                </div>
+
+                <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 pointer-events-none flex justify-center">
+                    <button 
+                        onClick={handleEndDiscussion}
+                        style={{ backgroundColor: theme.accent }}
+                        className="w-full max-w-xs py-4 rounded-full font-black text-white shadow-lg pointer-events-auto active:scale-95 transition-transform"
+                    >
+                        {isParty ? "VER RESULTADOS DE LA BORRACHERA" : "VER RESULTADOS"}
+                    </button>
+                </div>
+
+                <style>{`
+                    .card-exit {
+                        animation: slideOutLeft 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+                    }
+                    @keyframes strobe {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                        100% { opacity: 1; }
+                    }
+                    .animate-strobe {
+                        animation: strobe 0.5s steps(2, start) infinite;
+                    }
+                `}</style>
+            </div>
+        );
+    };
+
     const renderResults = () => {
         // Logic for results
         const impostors = gameState.gameData.filter(p => p.isImp);
         const civilWord = gameState.gameData.find(p => !p.isImp)?.realWord ?? "ERROR";
+        const isParty = gameState.settings.partyMode;
         
         let impostorText = "";
         if (gameState.isTrollEvent) {
@@ -600,40 +769,6 @@ function App() {
                         </p>
                     )}
                 </header>
-
-                {/* Starting Player Info - Redesigned */}
-                <div 
-                    style={{ 
-                        backgroundColor: theme.cardBg, 
-                        borderColor: theme.border, 
-                        borderRadius: theme.radius,
-                    }} 
-                    className="mb-10 w-full max-w-sm border backdrop-blur-md relative overflow-hidden group shadow-lg"
-                >
-                    {/* Gradient Line at Top */}
-                    <div className="absolute top-0 left-0 right-0 h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />
-
-                    <div className="p-5 flex items-center gap-4">
-                        {/* Avatar/Icon Placeholder */}
-                        <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner relative"
-                            style={{ backgroundColor: theme.bg, borderColor: theme.border, border: '1px solid' }}
-                        >
-                            {/* Subtle pulse */}
-                            <div className="absolute inset-0 rounded-full animate-ping opacity-10" style={{ backgroundColor: theme.accent }} />
-                            <Mic size={20} style={{ color: theme.accent }} />
-                        </div>
-
-                        <div className="flex flex-col">
-                            <span style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
-                                Comienza a hablar
-                            </span>
-                            <span style={{ color: theme.text }} className="text-xl font-black leading-none break-all">
-                                {gameState.startingPlayer}
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col items-center justify-center pb-32">
@@ -663,45 +798,57 @@ function App() {
                         </div>
                     ) : (
                         /* Revealed State - Summary Card */
-                        <div 
-                            style={{ 
-                                backgroundColor: theme.cardBg, 
-                                borderColor: gameState.isTrollEvent ? '#ef4444' : theme.accent,
-                                borderRadius: theme.radius,
-                                boxShadow: `0 0 40px ${gameState.isTrollEvent ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.2)'}`
-                            }} 
-                            className="w-full max-w-sm border-2 p-8 flex flex-col items-center text-center backdrop-blur-xl animate-in zoom-in duration-300"
-                        >
-                            {/* The Word */}
-                            <div className="mb-8 w-full">
-                                <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-2">La palabra era</p>
-                                <p style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black break-words uppercase leading-tight">
-                                    {gameState.isTrollEvent ? "CAOS" : civilWord}
-                                </p>
-                            </div>
-
-                            <div className="w-full h-px bg-white/10 mb-8" />
-
-                            {/* The Impostor(s) */}
-                            <div className="w-full">
-                                <p style={{ color: gameState.isTrollEvent ? '#ef4444' : theme.accent }} className="text-[10px] font-black uppercase tracking-widest mb-2">
-                                    Identidad Confirmada
-                                </p>
-                                <p style={{ color: theme.text }} className="text-lg font-bold leading-snug">
-                                    {impostorText}
-                                </p>
-                            </div>
-
-                            {/* Optional Hint Display */}
-                            {hintUsed && (
-                                <div className="mt-8 pt-6 border-t border-white/10 w-full animate-in fade-in slide-in-from-bottom-4 delay-150 fill-mode-forwards">
-                                    <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
-                                        Pista Revelada
-                                    </p>
-                                    <p style={{ color: theme.text }} className="text-sm font-mono italic opacity-80">
-                                        "{hintUsed}"
+                        <div className="w-full flex flex-col items-center gap-6">
+                            <div 
+                                style={{ 
+                                    backgroundColor: theme.cardBg, 
+                                    borderColor: gameState.isTrollEvent ? '#ef4444' : theme.accent,
+                                    borderRadius: theme.radius,
+                                    boxShadow: `0 0 40px ${gameState.isTrollEvent ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.2)'}`
+                                }} 
+                                className="w-full max-w-sm border-2 p-8 flex flex-col items-center text-center backdrop-blur-xl animate-in zoom-in duration-300"
+                            >
+                                {/* The Word */}
+                                <div className="mb-8 w-full">
+                                    <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-2">La palabra era</p>
+                                    <p style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black break-words uppercase leading-tight">
+                                        {gameState.isTrollEvent ? "CAOS" : civilWord}
                                     </p>
                                 </div>
+
+                                <div className="w-full h-px bg-white/10 mb-8" />
+
+                                {/* The Impostor(s) */}
+                                <div className="w-full">
+                                    <p style={{ color: gameState.isTrollEvent ? '#ef4444' : theme.accent }} className="text-[10px] font-black uppercase tracking-widest mb-2">
+                                        Identidad Confirmada
+                                    </p>
+                                    <p style={{ color: theme.text }} className="text-lg font-bold leading-snug">
+                                        {impostorText}
+                                    </p>
+                                </div>
+
+                                {/* Optional Hint Display */}
+                                {hintUsed && (
+                                    <div className="mt-8 pt-6 border-t border-white/10 w-full animate-in fade-in slide-in-from-bottom-4 delay-150 fill-mode-forwards">
+                                        <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
+                                            Pista Revelada
+                                        </p>
+                                        <p style={{ color: theme.text }} className="text-sm font-mono italic opacity-80">
+                                            "{hintUsed}"
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* PARTY MODE PROMPT FOR RESULTS */}
+                            {isParty && gameState.currentDrinkingPrompt && (
+                                 // Key forces re-render (and thus TTS + Animation replay) when prompt text changes
+                                <PartyNotification 
+                                    key={gameState.currentDrinkingPrompt}
+                                    prompt={gameState.currentDrinkingPrompt} 
+                                    theme={theme} 
+                                />
                             )}
                         </div>
                     )}
@@ -726,7 +873,7 @@ function App() {
                                     backgroundColor: isHoldingReveal ? theme.accent : 'rgba(0,0,0,0.1)'
                                 }}
                             />
-                            <Eye size={18} className="relative z-10" />
+                            {isParty ? <Beer size={18} className="relative z-10" /> : <Eye size={18} className="relative z-10" />}
                             <span className="relative z-10">MANTENER PARA REVELAR</span>
                         </button>
                     )}
@@ -773,6 +920,25 @@ function App() {
                     <button style={{ color: theme.text }} onClick={() => setSettingsOpen(false)}><X /></button>
                 </div>
 
+                {/* Party Mode Toggle */}
+                <div className="mb-8 p-4 rounded-xl border border-dashed border-pink-500/50 bg-pink-500/10">
+                     <div className="flex items-center justify-between">
+                         <div className="space-y-1">
+                            <p className="text-sm font-black text-pink-400 flex items-center gap-2">
+                                MODO FIESTA <Beer size={14}/>
+                            </p>
+                            <p className="text-[10px] text-pink-300/70">Drinking Edition (Nightclub Theme)</p>
+                        </div>
+                         <button 
+                            onClick={togglePartyMode}
+                            style={{ backgroundColor: gameState.settings.partyMode ? '#ec4899' : 'rgba(255,255,255,0.1)' }}
+                            className="w-12 h-6 rounded-full relative transition-colors active:scale-90 transform-gpu"
+                        >
+                            <div className={`w-4 h-4 bg-white shadow-md rounded-full absolute top-1 transition-all ${gameState.settings.partyMode ? 'left-7' : 'left-1'}`} />
+                        </button>
+                    </div>
+                </div>
+
                 {/* Theme Selector */}
                 <div className="flex-1">
                     <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest mb-4">Interfaz Visual</h3>
@@ -780,7 +946,11 @@ function App() {
                         {(Object.keys(THEMES) as ThemeName[]).map(t => (
                             <button 
                                 key={t}
-                                onClick={() => setThemeName(t)}
+                                onClick={() => {
+                                    setThemeName(t);
+                                    // If manually changing theme, maybe turn off party mode visual override if it clashes? 
+                                    // For now, let's allow manual override but party mode logic stays.
+                                }}
                                 style={{ 
                                     backgroundColor: themeName === t ? THEMES[t].accent : THEMES[t].border,
                                     borderColor: THEMES[t].accent 
@@ -795,7 +965,7 @@ function App() {
 
                 {/* Version Badge */}
                 <div className="mt-auto pt-6 border-t border-white/10 text-center">
-                    <p style={{ color: theme.sub }} className="text-[10px] font-mono opacity-50">v2.0.1 PRO ULTRA</p>
+                    <p style={{ color: theme.sub }} className="text-[10px] font-mono opacity-50">v2.1.0 DRINKING EDITION</p>
                 </div>
             </div>
         </div>
@@ -863,11 +1033,21 @@ function App() {
     };
 
     return (
-        <div style={{ backgroundColor: theme.bg, color: theme.text }} className="w-full h-full relative overflow-hidden transition-colors duration-700">
-            <Background theme={theme} phase={gameState.phase} isTroll={gameState.isTrollEvent} activeColor={currentPlayerColor} />
+        <div 
+            style={{ backgroundColor: theme.bg, color: theme.text }} 
+            className="w-full h-full relative overflow-hidden transition-colors duration-700"
+        >
+            <Background 
+                theme={theme} 
+                phase={gameState.phase} 
+                isTroll={gameState.isTrollEvent} 
+                activeColor={currentPlayerColor} 
+                isParty={gameState.settings.partyMode}
+            />
             
             {gameState.phase === 'setup' && renderSetup()}
             {gameState.phase === 'revealing' && renderReveal()}
+            {gameState.phase === 'discussion' && renderDiscussion()}
             {gameState.phase === 'results' && renderResults()}
             
             {renderDrawer()}

@@ -11,9 +11,10 @@ interface Props {
     nextAction: () => void;
     readyForNext: boolean;
     isLastPlayer: boolean;
+    isParty?: boolean;
 }
 
-export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealStart, onRevealEnd, nextAction, readyForNext, isLastPlayer }) => {
+export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealStart, onRevealEnd, nextAction, readyForNext, isLastPlayer, isParty }) => {
     // Reveal States
     const [isHolding, setIsHolding] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
@@ -304,7 +305,12 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
 
                          <div className="absolute inset-[2px] rounded-full z-0" style={{ backgroundColor: color }} />
                          
-                        <span className="relative z-10 tracking-widest">{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
+                        <span className="relative z-10 tracking-widest">
+                            {isLastPlayer 
+                                ? (isParty ? 'EMPEZAR EL BOTELLÓN' : 'EMPEZAR PARTIDA') 
+                                : (isParty ? 'SIGUIENTE BORRACHO' : 'SIGUIENTE JUGADOR')
+                            }
+                        </span>
                         {isLastPlayer ? <Play size={20} fill="currentColor" className="relative z-10"/> : <ArrowRight size={20} className="relative z-10"/>}
                     </button>
                 </div>
