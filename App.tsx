@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck } from 'lucide-react';
+import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock } from 'lucide-react';
 import { Background } from './components/Background';
 import { IdentityCard } from './components/IdentityCard';
 import { generateGameData } from './utils/gameLogic';
@@ -36,6 +36,24 @@ function App() {
     const [hasSeenCurrentCard, setHasSeenCurrentCard] = useState(false);
     const [showResults, setShowResults] = useState(false); // Controls the "censored" overlay in results
     const [isExiting, setIsExiting] = useState(false); // Animation state
+    
+    // State for the "Hold to Reveal" button
+    const [isHoldingReveal, setIsHoldingReveal] = useState(false);
+
+    // -- Effects --
+
+    // Logic for Hold to Reveal in Results screen
+    useEffect(() => {
+        let timer: number;
+        if (isHoldingReveal && !showResults) {
+            timer = window.setTimeout(() => {
+                setShowResults(true);
+                setIsHoldingReveal(false);
+                if (navigator.vibrate) navigator.vibrate([50, 50, 100]);
+            }, 800); // 800ms hold time
+        }
+        return () => clearTimeout(timer);
+    }, [isHoldingReveal, showResults]);
 
     // -- Handlers --
 
@@ -72,6 +90,7 @@ function App() {
         setHasSeenCurrentCard(false);
         setShowResults(false);
         setIsExiting(false);
+        setIsHoldingReveal(false);
     };
 
     const handleNextPlayer = () => {
@@ -141,7 +160,15 @@ function App() {
                 </header>
 
                 {/* Players Section */}
-                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: theme.radius }} className="p-5 border backdrop-blur-md">
+                <div 
+                    style={{ 
+                        backgroundColor: theme.cardBg, 
+                        borderColor: theme.border, 
+                        borderRadius: theme.radius,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }} 
+                    className="p-5 border backdrop-blur-md"
+                >
                     <div className="flex justify-between items-center mb-4">
                         <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Agentes ({gameState.players.length})</h3>
                         <Users size={16} color={theme.accent} />
@@ -176,7 +203,15 @@ function App() {
                 </div>
 
                 {/* Settings Section */}
-                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.border, borderRadius: theme.radius }} className="p-5 border backdrop-blur-md space-y-6">
+                <div 
+                    style={{ 
+                        backgroundColor: theme.cardBg, 
+                        borderColor: theme.border, 
+                        borderRadius: theme.radius,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }} 
+                    className="p-5 border backdrop-blur-md space-y-6"
+                >
                     
                     {/* Impostor Count */}
                     <div className="flex items-center justify-between">
@@ -233,8 +268,14 @@ function App() {
                 {/* Categories Button */}
                 <button 
                     onClick={() => setCategoriesOpen(true)}
-                    style={{ borderColor: theme.border, color: theme.text, backgroundColor: theme.cardBg }}
-                    className="w-full py-4 border rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
+                    style={{ 
+                        borderColor: theme.border, 
+                        color: theme.text, 
+                        backgroundColor: theme.cardBg, 
+                        borderRadius: theme.radius,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }}
+                    className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
                 >
                     <LayoutGrid size={16} /> Categorías de palabras
                 </button>
@@ -242,8 +283,14 @@ function App() {
                 {/* Settings Drawer Button */}
                 <button 
                     onClick={() => setSettingsOpen(true)}
-                    style={{ borderColor: theme.border, color: theme.sub }}
-                    className="w-full py-4 border rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-50 transition-all"
+                    style={{ 
+                        borderColor: theme.border, 
+                        color: theme.sub,
+                        backgroundColor: theme.border,
+                        borderRadius: theme.radius,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                    }}
+                    className="w-full py-4 border flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
                 >
                     <Settings size={16} /> Ajustes
                 </button>
@@ -256,11 +303,12 @@ function App() {
                     onClick={startGame}
                     disabled={gameState.players.length < 3}
                     style={{ 
-                        backgroundColor: gameState.players.length < 3 ? 'gray' : theme.accent, 
+                        backgroundColor: gameState.players.length < 3 ? 'gray' : theme.accent,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                     }}
-                    className="w-full max-w-xs py-3.5 text-white font-black text-base active:scale-95 transition-transform flex items-center justify-center gap-3 pointer-events-auto shadow-none rounded-full shadow-lg"
+                    className="w-full max-w-xs py-3.5 text-white font-black text-base active:scale-95 transition-transform flex items-center justify-center gap-3 pointer-events-auto rounded-full"
                 >
-                    INICIAR MISIÓN <ChevronRight strokeWidth={4} size={20} />
+                    EMPEZAR PARTIDA <ChevronRight strokeWidth={4} size={20} />
                 </button>
             </div>
         </div>
@@ -381,7 +429,7 @@ function App() {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pb-[calc(6rem+env(safe-area-inset-bottom))]">
+            <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pb-[calc(10rem+env(safe-area-inset-bottom))]">
                 {gameState.gameData.map((p, i) => (
                     <div 
                         key={i} 
@@ -407,33 +455,51 @@ function App() {
 
             {/* Actions */}
             <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 pointer-events-none space-y-3 flex flex-col items-center">
-                {!showResults ? (
+                {!showResults && (
                     <button 
-                        onClick={() => setShowResults(true)}
-                        className="w-full max-w-xs py-3.5 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg"
+                        onPointerDown={() => setIsHoldingReveal(true)}
+                        onPointerUp={() => setIsHoldingReveal(false)}
+                        onPointerLeave={() => setIsHoldingReveal(false)}
+                        className="w-full max-w-xs h-14 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg relative overflow-hidden flex items-center justify-center gap-2 select-none touch-none"
                     >
-                        Revelar Identidades
-                    </button>
-                ) : (
-                    <>
-                        <button 
-                            onClick={startGame}
+                        {/* Progress Fill */}
+                        <div 
+                            className={`absolute left-0 top-0 bottom-0 bg-black/10 transition-all ease-linear`}
                             style={{ 
-                                backgroundColor: theme.accent, 
+                                width: isHoldingReveal ? '100%' : '0%',
+                                transitionDuration: isHoldingReveal ? '800ms' : '0ms'
                             }}
-                            className="w-full max-w-xs py-3.5 text-white font-black uppercase tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-2 pointer-events-auto rounded-full shadow-lg"
-                        >
-                            <RotateCcw size={18} /> Volver a Jugar
-                        </button>
-                        <button 
-                            onClick={() => setGameState(prev => ({...prev, phase: 'setup'}))}
-                            style={{ borderColor: theme.border, color: theme.sub }}
-                            className="w-full max-w-xs py-3 border font-bold uppercase text-[10px] hover:text-opacity-100 opacity-80 transition-all pointer-events-auto rounded-full"
-                        >
-                            Cambiar Configuración
-                        </button>
-                    </>
+                        />
+                        <Eye size={18} className="relative z-10" />
+                        <span className="relative z-10">MANTENER PARA REVELAR</span>
+                    </button>
                 )}
+
+                <div className="grid grid-cols-2 gap-3 w-full max-w-xs pointer-events-auto">
+                    <button 
+                        onClick={startGame}
+                        style={{ 
+                            backgroundColor: showResults ? theme.accent : theme.cardBg, 
+                            color: showResults ? 'white' : theme.text,
+                            borderColor: theme.border
+                        }}
+                        className={`w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'}`}
+                    >
+                        <RotateCcw size={16} /> <span className="text-[10px]">Volver a Jugar</span>
+                    </button>
+                    
+                    <button 
+                        onClick={() => setGameState(prev => ({...prev, phase: 'setup'}))}
+                        style={{ 
+                            backgroundColor: theme.cardBg,
+                            borderColor: theme.border, 
+                            color: theme.sub 
+                        }}
+                        className="w-full py-4 border font-bold uppercase tracking-wide text-[10px] hover:text-opacity-100 hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl backdrop-blur-md shadow-lg"
+                    >
+                        <Settings size={16} /> Configuración
+                    </button>
+                </div>
             </div>
         </div>
     );
