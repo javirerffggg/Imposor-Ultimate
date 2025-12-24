@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock } from 'lucide-react';
+import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock, Fingerprint } from 'lucide-react';
 import { Background } from './components/Background';
 import { IdentityCard } from './components/IdentityCard';
 import { generateGameData } from './utils/gameLogic';
@@ -170,7 +170,7 @@ function App() {
                     className="p-5 border backdrop-blur-md"
                 >
                     <div className="flex justify-between items-center mb-4">
-                        <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Agentes ({gameState.players.length})</h3>
+                        <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Jugadores ({gameState.players.length})</h3>
                         <Users size={16} color={theme.accent} />
                     </div>
                     <div className="space-y-2 mb-4">
@@ -188,7 +188,7 @@ function App() {
                             value={newPlayerName}
                             onChange={(e) => setNewPlayerName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                            placeholder="Nuevo Agente..."
+                            placeholder="Nuevo Jugador..."
                             className="flex-1 rounded-lg px-4 py-3 outline-none text-sm font-bold border border-transparent focus:border-white/30 transition-colors placeholder:text-inherit placeholder:opacity-40"
                             style={{ backgroundColor: theme.border, color: theme.text }}
                         />
@@ -394,115 +394,189 @@ function App() {
         );
     };
 
-    const renderResults = () => (
-        <div className="flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500">
-             <header className="mb-8">
-                <h2 style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black italic">INFORME</h2>
-                <p style={{ color: showResults ? (gameState.isTrollEvent ? '#ef4444' : theme.accent) : theme.sub }} className="text-xs font-bold uppercase tracking-[0.4em]">
-                    {showResults && gameState.isTrollEvent ? '¡EVENTO TROLL DETECTADO!' : 'Estado de la Misión'}
-                </p>
-            </header>
+    const renderResults = () => {
+        // Logic for results
+        const impostors = gameState.gameData.filter(p => p.isImp);
+        const civilWord = gameState.gameData.find(p => !p.isImp)?.realWord ?? "ERROR";
+        
+        // Handle Troll Event logic for display
+        // If Troll Event, everyone is impostor, but 'realWord' property in gameData is marked 'TROLL'.
+        // However, visually we want to show that everyone was tricked if needed, 
+        // but the prompt asks for standard structure: "Word was XX" and "XX was Impostor".
+        
+        let impostorText = "";
+        if (gameState.isTrollEvent) {
+             impostorText = "¡TODOS ERAIS IMPOSTORES!";
+        } else if (impostors.length === 1) {
+             impostorText = `${impostors[0].name} era el impostor`;
+        } else {
+             const names = impostors.map(p => p.name);
+             // Join with commas and 'y' for the last one
+             impostorText = names.length > 1 
+                ? `${names.slice(0, -1).join(", ")} y ${names.slice(-1)} eran los impostores`
+                : `${names[0]} era el impostor`;
+        }
 
-            {/* Starting Player Info Container */}
-            <div 
-                style={{ 
-                    backgroundColor: theme.cardBg, 
-                    borderColor: theme.border,
-                    borderRadius: theme.radius
-                }} 
-                className="mb-6 border p-4 flex items-center gap-4 backdrop-blur-md shadow-sm"
-            >
+        // Hint Logic: In normal mode, if Hint Mode is ON, get the hint.
+        // The hint is stored in the impostor's "word" as "PISTA: [Hint]"
+        const hintUsed = gameState.settings.hintMode && !gameState.isTrollEvent && impostors.length > 0
+            ? impostors[0].word.replace("PISTA: ", "")
+            : null;
+
+        return (
+            <div className="flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500">
+                <header className="mb-4 text-center">
+                    <h2 style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black italic">INFORME</h2>
+                    {showResults && gameState.isTrollEvent && (
+                        <p className="text-xs font-bold uppercase tracking-[0.4em] text-red-500 mt-2">
+                            ¡EVENTO TROLL DETECTADO!
+                        </p>
+                    )}
+                </header>
+
+                {/* Starting Player Info - Redesigned */}
                 <div 
-                    style={{ backgroundColor: theme.accent }} 
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                    style={{ 
+                        backgroundColor: theme.cardBg, 
+                        borderColor: theme.border,
+                        borderRadius: theme.radius,
+                    }} 
+                    className="mb-10 w-full max-w-sm border backdrop-blur-md relative overflow-hidden group shadow-lg"
                 >
-                    <Mic size={20} className="text-white" />
-                </div>
-                <div>
-                    <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-0.5">
-                        Turno Inicial
-                    </p>
-                    <p style={{ color: theme.text }} className="font-bold text-lg leading-tight">
-                        Comienza a hablar <span className="italic">{gameState.startingPlayer}</span>
-                    </p>
-                </div>
-            </div>
+                    {/* Gradient Line at Top */}
+                    <div className="absolute top-0 left-0 right-0 h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${theme.accent}, transparent)` }} />
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pb-[calc(10rem+env(safe-area-inset-bottom))]">
-                {gameState.gameData.map((p, i) => (
-                    <div 
-                        key={i} 
-                        style={{ backgroundColor: theme.cardBg, borderRadius: theme.radius }}
-                        className="p-4 flex justify-between items-center backdrop-blur-sm"
-                    >
-                        <div>
-                            <p style={{ color: showResults ? (p.isImp ? '#ef4444' : '#22c55e') : theme.sub }} className="text-[9px] font-black uppercase tracking-widest mb-1">
-                                {showResults ? p.role : 'CLASIFICADO'}
-                            </p>
-                            <p style={{ color: theme.text }} className="font-bold text-lg">{p.name}</p>
+                    <div className="p-5 flex items-center gap-4">
+                        {/* Avatar/Icon Placeholder */}
+                        <div 
+                            className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner relative"
+                            style={{ backgroundColor: theme.bg, borderColor: theme.border, border: '1px solid' }}
+                        >
+                            {/* Subtle pulse */}
+                            <div className="absolute inset-0 rounded-full animate-ping opacity-10" style={{ backgroundColor: theme.accent }} />
+                            <Mic size={20} style={{ color: theme.accent }} />
                         </div>
-                        <div className="text-right">
-                             {showResults ? (
-                                <span style={{ color: theme.text }} className="font-bold opacity-80">{p.realWord}</span>
-                             ) : (
-                                 <div className="w-16 h-4 bg-white/10 rounded animate-pulse" />
-                             )}
+
+                        <div className="flex flex-col">
+                            <span style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
+                                Comienza a hablar
+                            </span>
+                            <span style={{ color: theme.text }} className="text-xl font-black leading-none break-all">
+                                {gameState.startingPlayer}
+                            </span>
                         </div>
                     </div>
-                ))}
-            </div>
+                </div>
 
-            {/* Actions */}
-            <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 pointer-events-none space-y-3 flex flex-col items-center">
-                {!showResults && (
-                    <button 
-                        onPointerDown={() => setIsHoldingReveal(true)}
-                        onPointerUp={() => setIsHoldingReveal(false)}
-                        onPointerLeave={() => setIsHoldingReveal(false)}
-                        className="w-full max-w-xs h-14 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg relative overflow-hidden flex items-center justify-center gap-2 select-none touch-none"
-                    >
-                        {/* Progress Fill */}
-                        <div 
-                            className={`absolute left-0 top-0 bottom-0 bg-black/10 transition-all ease-linear`}
-                            style={{ 
-                                width: isHoldingReveal ? '100%' : '0%',
-                                transitionDuration: isHoldingReveal ? '800ms' : '0ms'
-                            }}
-                        />
-                        <Eye size={18} className="relative z-10" />
-                        <span className="relative z-10">MANTENER PARA REVELAR</span>
-                    </button>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 w-full max-w-xs pointer-events-auto">
-                    <button 
-                        onClick={startGame}
-                        style={{ 
-                            backgroundColor: showResults ? theme.accent : theme.cardBg, 
-                            color: showResults ? 'white' : theme.text,
-                            borderColor: theme.border
-                        }}
-                        className={`w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'}`}
-                    >
-                        <RotateCcw size={16} /> <span className="text-[10px]">Volver a Jugar</span>
-                    </button>
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col items-center justify-center pb-32">
                     
-                    <button 
-                        onClick={() => setGameState(prev => ({...prev, phase: 'setup'}))}
-                        style={{ 
-                            backgroundColor: theme.cardBg,
-                            borderColor: theme.border, 
-                            color: theme.sub 
-                        }}
-                        className="w-full py-4 border font-bold uppercase tracking-wide text-[10px] hover:text-opacity-100 hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl backdrop-blur-md shadow-lg"
-                    >
-                        <Settings size={16} /> Configuración
-                    </button>
+                    {!showResults ? (
+                        /* Locked State */
+                        <div className="flex flex-col items-center gap-6 opacity-50 animate-pulse">
+                            <Lock size={64} style={{ color: theme.sub }} />
+                            <p style={{ color: theme.sub }} className="text-sm font-black uppercase tracking-widest text-center">
+                                EXPEDIENTE CLASIFICADO<br/>
+                                <span className="text-[10px] opacity-70">Mantén para desclasificar</span>
+                            </p>
+                        </div>
+                    ) : (
+                        /* Revealed State - Summary Card */
+                        <div 
+                            style={{ 
+                                backgroundColor: theme.cardBg, 
+                                borderColor: gameState.isTrollEvent ? '#ef4444' : theme.accent,
+                                borderRadius: theme.radius,
+                                boxShadow: `0 0 40px ${gameState.isTrollEvent ? 'rgba(239, 68, 68, 0.2)' : 'rgba(0,0,0,0.2)'}`
+                            }} 
+                            className="w-full max-w-sm border-2 p-8 flex flex-col items-center text-center backdrop-blur-xl animate-in zoom-in duration-300"
+                        >
+                            {/* The Word */}
+                            <div className="mb-8 w-full">
+                                <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-2">La palabra era</p>
+                                <p style={{ color: theme.text, fontFamily: theme.font }} className="text-4xl font-black break-words uppercase leading-tight">
+                                    {gameState.isTrollEvent ? "CAOS" : civilWord}
+                                </p>
+                            </div>
+
+                            <div className="w-full h-px bg-white/10 mb-8" />
+
+                            {/* The Impostor(s) */}
+                            <div className="w-full">
+                                <p style={{ color: gameState.isTrollEvent ? '#ef4444' : theme.accent }} className="text-[10px] font-black uppercase tracking-widest mb-2">
+                                    Identidad Confirmada
+                                </p>
+                                <p style={{ color: theme.text }} className="text-lg font-bold leading-snug">
+                                    {impostorText}
+                                </p>
+                            </div>
+
+                            {/* Optional Hint Display */}
+                            {hintUsed && (
+                                <div className="mt-8 pt-6 border-t border-white/10 w-full animate-in fade-in slide-in-from-bottom-4 delay-150 fill-mode-forwards">
+                                    <p style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest mb-1">
+                                        Pista Revelada
+                                    </p>
+                                    <p style={{ color: theme.text }} className="text-sm font-mono italic opacity-80">
+                                        "{hintUsed}"
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Actions */}
+                <div className="fixed bottom-0 left-0 w-full p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] z-30 pointer-events-none space-y-3 flex flex-col items-center">
+                    {!showResults && (
+                        <button 
+                            onPointerDown={() => setIsHoldingReveal(true)}
+                            onPointerUp={() => setIsHoldingReveal(false)}
+                            onPointerLeave={() => setIsHoldingReveal(false)}
+                            className="w-full max-w-xs h-14 bg-white text-black font-black uppercase tracking-widest active:scale-95 transition-transform pointer-events-auto rounded-full shadow-lg relative overflow-hidden flex items-center justify-center gap-2 select-none touch-none"
+                        >
+                            {/* Progress Fill */}
+                            <div 
+                                className={`absolute left-0 top-0 bottom-0 bg-black/10 transition-all ease-linear`}
+                                style={{ 
+                                    width: isHoldingReveal ? '100%' : '0%',
+                                    transitionDuration: isHoldingReveal ? '800ms' : '0ms'
+                                }}
+                            />
+                            <Eye size={18} className="relative z-10" />
+                            <span className="relative z-10">MANTENER PARA REVELAR</span>
+                        </button>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3 w-full max-w-xs pointer-events-auto">
+                        <button 
+                            onClick={startGame}
+                            style={{ 
+                                backgroundColor: showResults ? theme.accent : theme.cardBg, 
+                                color: showResults ? 'white' : theme.text,
+                                borderColor: theme.border
+                            }}
+                            className={`w-full py-4 font-black uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl shadow-lg border ${!showResults && 'backdrop-blur-md'}`}
+                        >
+                            <RotateCcw size={16} /> <span className="text-[10px]">Volver a Jugar</span>
+                        </button>
+                        
+                        <button 
+                            onClick={() => setGameState(prev => ({...prev, phase: 'setup'}))}
+                            style={{ 
+                                backgroundColor: theme.cardBg,
+                                borderColor: theme.border, 
+                                color: theme.sub 
+                            }}
+                            className="w-full py-4 border font-bold uppercase tracking-wide text-[10px] hover:text-opacity-100 hover:bg-white/5 active:scale-95 transition-all flex items-center justify-center gap-2 rounded-2xl backdrop-blur-md shadow-lg"
+                        >
+                            <Settings size={16} /> Configuración
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderCategories = () => {
         const allCats = Object.keys(CATEGORIES_DATA);
@@ -557,14 +631,14 @@ function App() {
     const renderDrawer = () => (
         <div className={`fixed inset-0 z-50 transform transition-transform duration-300 ${settingsOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSettingsOpen(false)} />
-            <div style={{ backgroundColor: theme.bg }} className="absolute right-0 h-full w-80 shadow-2xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-y-auto flex flex-col gap-8 border-l border-white/10">
-                <div className="flex justify-between items-center">
+            <div style={{ backgroundColor: theme.bg }} className="absolute right-0 h-full w-80 shadow-2xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-y-auto flex flex-col border-l border-white/10">
+                <div className="flex justify-between items-center mb-8">
                     <h2 style={{ color: theme.text }} className="text-2xl font-black italic">Ajustes</h2>
                     <button style={{ color: theme.text }} onClick={() => setSettingsOpen(false)}><X /></button>
                 </div>
 
                 {/* Theme Selector */}
-                <div>
+                <div className="flex-1">
                     <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest mb-4">Interfaz Visual</h3>
                     <div className="grid grid-cols-2 gap-3">
                         {(Object.keys(THEMES) as ThemeName[]).map(t => (
@@ -581,6 +655,11 @@ function App() {
                             </button>
                         ))}
                     </div>
+                </div>
+
+                {/* Version Badge */}
+                <div className="mt-auto pt-6 border-t border-white/10 text-center">
+                    <p style={{ color: theme.sub }} className="text-[10px] font-mono opacity-50">v2.0.1 PRO ULTRA</p>
                 </div>
             </div>
         </div>
