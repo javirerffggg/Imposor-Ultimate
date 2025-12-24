@@ -1,17 +1,19 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { GamePlayer, ThemeConfig } from '../types';
-import { Fingerprint, Shield, Skull, Eye } from 'lucide-react';
+import { Fingerprint, Shield, Skull, Eye, Play } from 'lucide-react';
 
 interface Props {
     player: GamePlayer;
     theme: ThemeConfig;
+    color: string;
     onRevealStart: () => void;
     onRevealEnd: () => void;
     nextAction: () => void;
     readyForNext: boolean;
+    isLastPlayer: boolean;
 }
 
-export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, onRevealEnd, nextAction, readyForNext }) => {
+export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealStart, onRevealEnd, nextAction, readyForNext, isLastPlayer }) => {
     const [isHolding, setIsHolding] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -77,12 +79,13 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp} // Ensure release if finger slides off
                 style={{ 
-                    backgroundColor: theme.cardBg,
-                    borderColor: theme.border,
+                    // Gradient: Theme color on top-left, subtle player color on bottom-right (20% opacity)
+                    background: `linear-gradient(135deg, ${theme.cardBg} 0%, ${color}33 100%)`,
+                    borderColor: isHolding ? color : theme.border,
                     borderRadius: theme.radius,
-                    boxShadow: isHolding ? `0 0 50px ${theme.accent}40` : '0 10px 30px rgba(0,0,0,0.5)',
+                    boxShadow: isHolding ? `0 0 50px ${color}40` : '0 10px 30px rgba(0,0,0,0.5)',
                     transform: isHolding ? 'scale(1.02)' : 'scale(1)', // Only scale, no rotate
-                    transition: 'transform 0.1s ease-out, box-shadow 0.3s ease',
+                    transition: 'all 0.3s ease',
                     animation: (!isHolding && !hasInteracted) ? 'breathe 4s ease-in-out infinite' : 'none'
                 }}
                 className="w-full aspect-[3/4] border-2 relative overflow-hidden cursor-pointer select-none touch-none"
@@ -92,8 +95,8 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                     <div 
                         className="absolute w-full h-2 z-20 shadow-[0_0_20px_currentColor]"
                         style={{ 
-                            backgroundColor: theme.accent, 
-                            color: theme.accent,
+                            backgroundColor: color, 
+                            color: color,
                             animation: 'scan 1.5s linear infinite'
                         }}
                     />
@@ -107,10 +110,10 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                         /* Front / Idle State */
                         <div className="flex flex-col items-center gap-6 animate-pulse">
                             <div 
-                                className="w-24 h-24 rounded-full border-4 flex items-center justify-center"
-                                style={{ borderColor: theme.accent }}
+                                className="w-24 h-24 rounded-full border-4 flex items-center justify-center transition-colors duration-300"
+                                style={{ borderColor: color }}
                             >
-                                <Fingerprint size={48} color={theme.accent} />
+                                <Fingerprint size={48} color={color} />
                             </div>
                             <p style={{ color: theme.sub }} className="text-xs font-black tracking-widest uppercase">
                                 Mantén pulsado para revelar tu rol
@@ -147,7 +150,7 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                                 style={{ 
                                     fontSize: getFontSize(player.word),
                                     color: theme.text,
-                                    textShadow: `0 0 20px ${theme.accent}`
+                                    textShadow: `0 0 20px ${color}`
                                 }}
                                 className="font-black leading-tight break-words uppercase"
                             >
@@ -162,10 +165,10 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                 </div>
 
                 {/* Decorative corners */}
-                <div className="absolute top-4 left-4 w-4 h-4 border-l-2 border-t-2 opacity-50" style={{ borderColor: theme.text }}/>
-                <div className="absolute top-4 right-4 w-4 h-4 border-r-2 border-t-2 opacity-50" style={{ borderColor: theme.text }}/>
-                <div className="absolute bottom-4 left-4 w-4 h-4 border-l-2 border-b-2 opacity-50" style={{ borderColor: theme.text }}/>
-                <div className="absolute bottom-4 right-4 w-4 h-4 border-r-2 border-b-2 opacity-50" style={{ borderColor: theme.text }}/>
+                <div className="absolute top-4 left-4 w-4 h-4 border-l-2 border-t-2 opacity-50 transition-colors" style={{ borderColor: isHolding ? color : theme.text }}/>
+                <div className="absolute top-4 right-4 w-4 h-4 border-r-2 border-t-2 opacity-50 transition-colors" style={{ borderColor: isHolding ? color : theme.text }}/>
+                <div className="absolute bottom-4 left-4 w-4 h-4 border-l-2 border-b-2 opacity-50 transition-colors" style={{ borderColor: isHolding ? color : theme.text }}/>
+                <div className="absolute bottom-4 right-4 w-4 h-4 border-r-2 border-b-2 opacity-50 transition-colors" style={{ borderColor: isHolding ? color : theme.text }}/>
             </div>
 
             {/* Next Button */}
@@ -173,11 +176,11 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                 {readyForNext && !isHolding && (
                     <button
                         onClick={nextAction}
-                        style={{ backgroundColor: theme.accent }}
+                        style={{ backgroundColor: color }}
                         className="w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 rounded-full"
                     >
-                        <span>SIGUIENTE JUGADOR</span>
-                        <Eye size={20} />
+                        <span>{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
+                        {isLastPlayer ? <Play size={20} fill="currentColor" /> : <Eye size={20} />}
                     </button>
                 )}
             </div>

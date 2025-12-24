@@ -3,7 +3,7 @@ import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight,
 import { Background } from './components/Background';
 import { IdentityCard } from './components/IdentityCard';
 import { generateGameData } from './utils/gameLogic';
-import { THEMES, DEFAULT_PLAYERS } from './constants';
+import { THEMES, DEFAULT_PLAYERS, PLAYER_COLORS } from './constants';
 import { CATEGORIES_DATA } from './categories';
 import { GameState, ThemeName, Player } from './types';
 
@@ -35,6 +35,7 @@ function App() {
     const [categoriesOpen, setCategoriesOpen] = useState(false);
     const [hasSeenCurrentCard, setHasSeenCurrentCard] = useState(false);
     const [showResults, setShowResults] = useState(false); // Controls the "censored" overlay in results
+    const [isExiting, setIsExiting] = useState(false); // Animation state
 
     // -- Handlers --
 
@@ -70,15 +71,26 @@ function App() {
         }));
         setHasSeenCurrentCard(false);
         setShowResults(false);
+        setIsExiting(false);
     };
 
     const handleNextPlayer = () => {
-        if (gameState.currentPlayerIndex < gameState.players.length - 1) {
-            setGameState(prev => ({ ...prev, currentPlayerIndex: prev.currentPlayerIndex + 1 }));
-            setHasSeenCurrentCard(false);
-        } else {
-            setGameState(prev => ({ ...prev, phase: 'results' }));
-        }
+        if (isExiting) return; // Prevent double clicks during anim
+
+        // Start exit animation
+        setIsExiting(true);
+
+        // Wait for animation to finish before changing state
+        setTimeout(() => {
+            if (gameState.currentPlayerIndex < gameState.players.length - 1) {
+                setGameState(prev => ({ ...prev, currentPlayerIndex: prev.currentPlayerIndex + 1 }));
+                setHasSeenCurrentCard(false);
+            } else {
+                setGameState(prev => ({ ...prev, phase: 'results' }));
+            }
+            // Reset exit state (this triggers the enter animation for the new component)
+            setIsExiting(false);
+        }, 300);
     };
 
     const addPlayer = () => {
@@ -254,32 +266,85 @@ function App() {
         </div>
     );
 
-    const renderReveal = () => (
-        <div className="flex flex-col h-full items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10 animate-in fade-in zoom-in-95 duration-300">
-            <IdentityCard 
-                player={gameState.gameData[gameState.currentPlayerIndex]}
-                theme={theme}
-                onRevealStart={() => {}}
-                onRevealEnd={() => setHasSeenCurrentCard(true)}
-                nextAction={handleNextPlayer}
-                readyForNext={hasSeenCurrentCard}
-            />
-            
-            <div className="absolute bottom-[calc(2rem+env(safe-area-inset-bottom))] text-center opacity-50 space-y-2">
-                 <p style={{ color: theme.sub }} className="text-[10px] uppercase tracking-widest">
-                    Jugador {gameState.currentPlayerIndex + 1} de {gameState.players.length}
-                </p>
-                <div className="flex gap-1 justify-center">
-                    {gameState.players.map((_, i) => (
-                        <div 
-                            key={i} 
-                            className={`w-1.5 h-1.5 rounded-full ${i <= gameState.currentPlayerIndex ? 'bg-white' : 'bg-white/20'}`}
-                        />
-                    ))}
+    const renderReveal = () => {
+        // Deterministic color based on player index
+        const cardColor = PLAYER_COLORS[gameState.currentPlayerIndex % PLAYER_COLORS.length];
+        const isLastPlayer = gameState.currentPlayerIndex === gameState.players.length - 1;
+
+        return (
+            <div className="flex flex-col h-full items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative z-10 overflow-hidden">
+                <div 
+                    key={gameState.currentPlayerIndex} // Key ensures remount on index change for entry anim
+                    className={`w-full max-w-sm flex flex-col items-center ${isExiting ? 'card-exit' : 'card-enter'}`}
+                >
+                    <IdentityCard 
+                        player={gameState.gameData[gameState.currentPlayerIndex]}
+                        theme={theme}
+                        color={cardColor}
+                        onRevealStart={() => {}}
+                        onRevealEnd={() => setHasSeenCurrentCard(true)}
+                        nextAction={handleNextPlayer}
+                        readyForNext={hasSeenCurrentCard}
+                        isLastPlayer={isLastPlayer}
+                    />
                 </div>
+                
+                <div className="mt-auto mb-4 text-center opacity-50 space-y-2 shrink-0">
+                     <p style={{ color: theme.sub }} className="text-[10px] uppercase tracking-widest">
+                        Jugador {gameState.currentPlayerIndex + 1} de {gameState.players.length}
+                    </p>
+                    <div className="flex gap-1 justify-center">
+                        {gameState.players.map((_, i) => (
+                            <div 
+                                key={i} 
+                                style={{ 
+                                    backgroundColor: i <= gameState.currentPlayerIndex 
+                                        ? PLAYER_COLORS[i % PLAYER_COLORS.length] 
+                                        : 'rgba(255,255,255,0.2)' 
+                                }}
+                                className={`w-2 h-2 rounded-full transition-colors`}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                <style>{`
+                    .card-enter {
+                        animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+                    .card-exit {
+                        animation: slideOutLeft 0.3s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+                    }
+                    
+                    @keyframes slideInRight {
+                        from { 
+                            opacity: 0; 
+                            transform: translateX(100px) scale(0.95) rotate(2deg);
+                            filter: blur(4px);
+                        }
+                        to { 
+                            opacity: 1; 
+                            transform: translateX(0) scale(1) rotate(0deg);
+                            filter: blur(0);
+                        }
+                    }
+                    
+                    @keyframes slideOutLeft {
+                        from { 
+                            opacity: 1; 
+                            transform: translateX(0) scale(1) rotate(0deg);
+                            filter: blur(0);
+                        }
+                        to { 
+                            opacity: 0; 
+                            transform: translateX(-100px) scale(0.95) rotate(-2deg);
+                            filter: blur(4px);
+                        }
+                    }
+                `}</style>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderResults = () => (
         <div className="flex flex-col h-full relative z-10 p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] animate-in slide-in-from-right duration-500">
