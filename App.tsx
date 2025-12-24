@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock, Fingerprint } from 'lucide-react';
+import { Settings, Users, Ghost, Zap, Shuffle, RotateCcw, Monitor, ChevronRight, X, Check, ShieldAlert, Mic, LayoutGrid, CheckCheck, Eye, Lock, Fingerprint, Save, Trash2, Database } from 'lucide-react';
 import { Background } from './components/Background';
 import { IdentityCard } from './components/IdentityCard';
 import { generateGameData } from './utils/gameLogic';
@@ -30,6 +30,16 @@ function App() {
         theme: 'illojuan'
     });
 
+    // -- Database State --
+    const [savedPlayers, setSavedPlayers] = useState<string[]>(() => {
+        try {
+            const saved = localStorage.getItem('impostor_saved_players');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
     const [newPlayerName, setNewPlayerName] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -45,6 +55,11 @@ function App() {
     const currentPlayerColor = PLAYER_COLORS[gameState.currentPlayerIndex % PLAYER_COLORS.length];
 
     // -- Effects --
+
+    // Save players to local storage whenever list changes
+    useEffect(() => {
+        localStorage.setItem('impostor_saved_players', JSON.stringify(savedPlayers));
+    }, [savedPlayers]);
 
     // Logic for Hold to Reveal in Results screen
     useEffect(() => {
@@ -135,15 +150,33 @@ function App() {
         }, 800);
     };
 
-    const addPlayer = () => {
-        if (!newPlayerName.trim()) return;
-        const newPlayer: Player = { id: Date.now().toString(), name: newPlayerName.trim() };
+    const addPlayer = (name: string = newPlayerName) => {
+        if (!name.trim()) return;
+        // Check duplicate in current game
+        if (gameState.players.some(p => p.name.toLowerCase() === name.trim().toLowerCase())) return;
+
+        const newPlayer: Player = { id: Date.now().toString() + Math.random(), name: name.trim() };
         setGameState(prev => ({ ...prev, players: [...prev.players, newPlayer] }));
-        setNewPlayerName("");
+        if (name === newPlayerName) setNewPlayerName("");
     };
 
     const removePlayer = (id: string) => {
         setGameState(prev => ({ ...prev, players: prev.players.filter(p => p.id !== id) }));
+    };
+
+    // -- Database Handlers --
+
+    const saveToBank = () => {
+        if (!newPlayerName.trim()) return;
+        const name = newPlayerName.trim();
+        if (!savedPlayers.includes(name)) {
+            setSavedPlayers(prev => [...prev, name]);
+        }
+        setNewPlayerName("");
+    };
+
+    const deleteFromBank = (name: string) => {
+        setSavedPlayers(prev => prev.filter(p => p !== name));
     };
 
     const toggleCategory = (cat: string) => {
@@ -198,9 +231,11 @@ function App() {
                             <h3 style={{ color: theme.sub }} className="text-xs font-black uppercase tracking-widest">Jugadores ({gameState.players.length})</h3>
                             <Users size={16} color={theme.accent} />
                         </div>
+                        
+                        {/* Active Players List */}
                         <div className="space-y-2 mb-4">
                             {gameState.players.map(p => (
-                                <div key={p.id} style={{ backgroundColor: theme.border }} className="flex justify-between items-center p-3 rounded-lg">
+                                <div key={p.id} style={{ backgroundColor: theme.border }} className="flex justify-between items-center p-3 rounded-lg animate-in slide-in-from-left duration-300">
                                     <span style={{ color: theme.text }} className="font-bold">{p.name}</span>
                                     <button onClick={() => removePlayer(p.id)} style={{ color: theme.sub }} className="hover:text-red-500 transition-colors">
                                         <X size={16} />
@@ -208,23 +243,80 @@ function App() {
                                 </div>
                             ))}
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* Input Area */}
+                        <div className="flex gap-2 mb-4">
                             <input 
                                 value={newPlayerName}
                                 onChange={(e) => setNewPlayerName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
                                 placeholder="Nuevo Jugador..."
-                                className="flex-1 rounded-lg px-4 py-3 outline-none text-sm font-bold border border-transparent focus:border-white/30 transition-colors placeholder:text-inherit placeholder:opacity-40"
+                                className="flex-1 min-w-0 rounded-lg px-4 py-3 outline-none text-sm font-bold border border-transparent focus:border-white/30 transition-colors placeholder:text-inherit placeholder:opacity-40"
                                 style={{ backgroundColor: theme.border, color: theme.text }}
                             />
+                            {/* Save to Bank Button */}
                             <button 
-                                onClick={addPlayer}
-                                style={{ backgroundColor: theme.accent }}
-                                className="px-4 rounded-lg text-white font-bold active:scale-90 transition-transform"
+                                onClick={saveToBank}
+                                style={{ backgroundColor: theme.border, color: theme.sub }}
+                                className="w-12 rounded-lg font-bold hover:bg-white/10 active:scale-90 transition-transform flex items-center justify-center shrink-0"
+                                title="Guardar en banco"
                             >
-                                <Check />
+                                <Save size={20} />
+                            </button>
+                            {/* Add to Game Button */}
+                            <button 
+                                onClick={() => addPlayer()}
+                                style={{ backgroundColor: theme.accent }}
+                                className="w-12 rounded-lg text-white font-bold active:scale-90 transition-transform shadow-lg flex items-center justify-center shrink-0"
+                            >
+                                <Check size={24} />
                             </button>
                         </div>
+
+                        {/* Player Bank Section */}
+                        {savedPlayers.length > 0 && (
+                             <div className="mt-6 pt-4 border-t border-white/5">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Database size={12} color={theme.sub}/>
+                                    <h4 style={{ color: theme.sub }} className="text-[10px] font-black uppercase tracking-widest">Banco de Agentes</h4>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {savedPlayers.map((name, idx) => {
+                                        const isInGame = gameState.players.some(p => p.name === name);
+                                        return (
+                                            <div 
+                                                key={idx}
+                                                style={{ 
+                                                    backgroundColor: isInGame ? theme.accent : theme.border,
+                                                    opacity: isInGame ? 0.5 : 1,
+                                                    borderColor: theme.border
+                                                }}
+                                                className="pl-3 pr-1 py-1.5 rounded-full border flex items-center gap-2 transition-all"
+                                            >
+                                                <button 
+                                                    onClick={() => !isInGame && addPlayer(name)}
+                                                    disabled={isInGame}
+                                                    style={{ color: isInGame ? 'white' : theme.text }}
+                                                    className="text-xs font-bold disabled:cursor-not-allowed"
+                                                >
+                                                    {name}
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        deleteFromBank(name);
+                                                    }}
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10"
+                                                    style={{ color: theme.sub }}
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                             </div>
+                        )}
                     </div>
 
                     {/* Settings Section */}

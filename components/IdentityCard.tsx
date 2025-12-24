@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { GamePlayer, ThemeConfig } from '../types';
-import { Fingerprint, Shield, Skull, Eye, Play } from 'lucide-react';
+import { Fingerprint, Shield, Skull, Eye, Play, ArrowRight } from 'lucide-react';
 
 interface Props {
     player: GamePlayer;
@@ -282,9 +282,14 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                             transform: isButtonVisible ? 'scale(1)' : 'scale(0.95)',
                             pointerEvents: isButtonVisible ? 'auto' : 'none',
                             touchAction: 'manipulation',
-                            boxShadow: isLastPlayer && isButtonVisible ? `0 0 20px ${color}` : '0 4px 12px rgba(0,0,0,0.3)'
+                            // Only apply static shadow if it's the start game button. 
+                            // Otherwise, let the animation handle the shadow.
+                            boxShadow: isLastPlayer && isButtonVisible ? `0 0 20px ${color}` : undefined,
+                            animation: isButtonVisible 
+                                ? (isLastPlayer ? 'none' : 'shadow-pulse 2s infinite ease-in-out') 
+                                : 'none'
                         }}
-                        className={`relative z-20 w-full max-w-xs py-3 px-6 font-bold text-white shadow-lg transition-all duration-100 flex items-center justify-center gap-2 rounded-full overflow-hidden transform-gpu
+                        className={`relative z-20 w-full max-w-xs py-3 px-6 font-bold text-white transition-all duration-100 flex items-center justify-center gap-2 rounded-full overflow-hidden transform-gpu
                         ${isLastPlayer ? 'active:scale-90' : 'active:scale-95'}`}
                     >
                          {/* Shimmer Effect for Last Player */}
@@ -300,7 +305,7 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                          <div className="absolute inset-[2px] rounded-full z-0" style={{ backgroundColor: color }} />
                          
                         <span className="relative z-10 tracking-widest">{isLastPlayer ? 'EMPEZAR PARTIDA' : 'SIGUIENTE JUGADOR'}</span>
-                        {isLastPlayer ? <Play size={20} fill="currentColor" className="relative z-10"/> : <Eye size={20} className="relative z-10"/>}
+                        {isLastPlayer ? <Play size={20} fill="currentColor" className="relative z-10"/> : <ArrowRight size={20} className="relative z-10"/>}
                     </button>
                 </div>
 
@@ -335,6 +340,11 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                     }
                     @keyframes shimmer {
                         100% { transform: translateX(100%); }
+                    }
+                    @keyframes shadow-pulse {
+                        0% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+                        50% { box-shadow: 0 12px 28px rgba(0,0,0,0.6); }
+                        100% { box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
                     }
                 `}</style>
             </div>
