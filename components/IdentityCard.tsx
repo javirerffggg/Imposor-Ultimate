@@ -55,33 +55,6 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
         }
     };
 
-    const handleMouseMove = (e: React.MouseEvent) => {
-        if (!cardRef.current) return;
-        const rect = cardRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        // Subtle tilt effect
-        const rotateX = ((y - centerY) / centerY) * -10;
-        const rotateY = ((x - centerX) / centerX) * 10;
-        
-        cardRef.current.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${isHolding ? 1.02 : 1})`;
-    };
-
-    const resetTilt = () => {
-        if (cardRef.current) {
-            // If animation should be active, clear transform so CSS animation can take over
-            if (!hasInteracted && !isHolding) {
-                cardRef.current.style.transform = '';
-            } else {
-                cardRef.current.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
-            }
-        }
-        handlePointerUp();
-    };
-
     // Smart font scaling
     const getFontSize = (text: string) => {
         if (text.length > 15) return '1.5rem';
@@ -102,13 +75,13 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                 ref={cardRef}
                 onPointerDown={handlePointerDown}
                 onPointerUp={handlePointerUp}
-                onPointerLeave={resetTilt}
-                onMouseMove={handleMouseMove}
+                onPointerLeave={handlePointerUp} // Ensure release if finger slides off
                 style={{ 
                     backgroundColor: theme.cardBg,
                     borderColor: theme.border,
                     borderRadius: theme.radius,
                     boxShadow: isHolding ? `0 0 50px ${theme.accent}40` : '0 10px 30px rgba(0,0,0,0.5)',
+                    transform: isHolding ? 'scale(1.02)' : 'scale(1)', // Only scale, no rotate
                     transition: 'transform 0.1s ease-out, box-shadow 0.3s ease',
                     animation: (!isHolding && !hasInteracted) ? 'breathe 4s ease-in-out infinite' : 'none'
                 }}
@@ -127,7 +100,8 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, onRevealStart, on
                 )}
 
                 {/* Content Container */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                {/* Added conditional pb-32 to push content up when holding */}
+                <div className={`absolute inset-0 flex flex-col items-center justify-center p-6 text-center transition-all duration-200 ${isHolding ? 'pb-32' : ''}`}>
                     
                     {!isHolding ? (
                         /* Front / Idle State */
