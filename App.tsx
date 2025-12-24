@@ -236,7 +236,7 @@ function App() {
                     style={{ borderColor: theme.border, color: theme.text, backgroundColor: theme.cardBg }}
                     className="w-full py-4 border rounded-lg flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest hover:opacity-80 transition-all backdrop-blur-md"
                 >
-                    <LayoutGrid size={16} /> Banco de Datos
+                    <LayoutGrid size={16} /> Categorías de palabras
                 </button>
 
                 {/* Settings Drawer Button */}
