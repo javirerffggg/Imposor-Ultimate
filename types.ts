@@ -24,7 +24,15 @@ export interface GamePlayer extends Player {
     realWord: string; // The actual civil word (for results)
     isImp: boolean;
     category: string;
+    areScore: number; // The ARE weight calculated for this round
 }
+
+export interface PlayerStats {
+    totalImpostorCount: number; // Total times they have been impostor
+    lastImpostorRound: number;  // The round number (index) when they were last impostor
+}
+
+export type TrollScenario = 'espejo_total' | 'civil_solitario' | 'falsa_alarma';
 
 export interface GameState {
     phase: 'setup' | 'revealing' | 'discussion' | 'results';
@@ -34,9 +42,12 @@ export interface GameState {
     currentPlayerIndex: number;
     startingPlayer: string;
     isTrollEvent: boolean;
+    trollScenario: TrollScenario | null; // Specific Pandora scenario
     history: {
-        lastImpostorIds: string[];
+        roundCounter: number; // Global counter of rounds played
         lastWords: string[];
+        playerStats: Record<string, PlayerStats>; // Persistent infinite history by Player ID
+        lastTrollRound: number; // For the 5-round cooldown lock
     };
     settings: {
         hintMode: boolean;

@@ -147,12 +147,13 @@ export const IdentityCard: React.FC<Props> = ({ player, theme, color, onRevealSt
                         
                         boxShadow: isHolding ? `0 0 50px ${color}60` : '0 10px 30px rgba(0,0,0,0.5)',
                         
-                        transition: isDragging 
+                        // Allow transition when holding (revealing) to animate the lift
+                        transition: (isDragging && !isHolding) 
                             ? 'none' 
                             : 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease',
                         
-                        // Removed scale(${isHolding ? 1.02 : 1}) to prevent text blur
-                        transform: `translate3d(${dragPosition.x}px, ${dragPosition.y}px, 0) rotate(${dragPosition.x * 0.05}deg)`,
+                        // Lift card up by 40px when holding
+                        transform: `translate3d(${dragPosition.x}px, ${dragPosition.y + (isHolding ? -40 : 0)}px, 0) rotate(${dragPosition.x * 0.05}deg)`,
                         
                         animation: (!isHolding && !hasInteracted && !isDragging) ? 'breathe 4s ease-in-out infinite' : (isHolding ? 'reveal-pulse 2s infinite' : 'none'),
                         touchAction: 'none',

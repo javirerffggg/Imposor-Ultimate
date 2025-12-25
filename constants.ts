@@ -207,30 +207,38 @@ export const THEMES: Record<ThemeName, ThemeConfig> = {
     }
 };
 
-export const DRINKING_PROMPTS = [
-    // Eventos de Atributos y Estado
-    "¡El jugador con menos porcentaje de batería, bebe un trago!",
-    "¡El jugador que lleve más tiempo sin ser Impostor, bebe un trago!",
-    "¡Cualquier jugador que lleve zapatillas blancas, bebe un trago!",
-    "¡El jugador con el nombre más corto de la lista, bebe un trago!",
-    "¡El jugador que tenga el móvil más nuevo, bebe un trago!",
-    "¡Cualquier jugador que lleve gafas (de ver o de sol), bebe un trago!",
-    "¡El jugador que esté sentado a la derecha del dueño del móvil, bebe un trago!",
-    "¡Cualquier jugador que tenga un tatuaje a la vista, bebe un trago!",
-    "¡El jugador que haya enviado el último WhatsApp del grupo, bebe un trago!",
+export const PARTY_PROMPTS = {
+    setup: [
+        "¡Somos una multitud! {RANDOM_PLAYER}, bebe un trago para celebrar la reunión.",
+        "Batería al {BATTERY}%. Si tienes menos energía que el móvil, bebe un trago.",
+        "¡{PLAYER_1}, por ser el primero en la lista, bebe un trago!",
+        "{PLAYER_NAME_LONGEST}, tu nombre es tan largo como tu sed. ¡Bebe un trago!",
+        "Son más de las {TIME}. Todos los que tengan sueño, beben un trago.",
+    ],
+    revealing: [
+        "Móvil entregado. {CURRENT_PLAYER}, si el que te ha pasado el móvil ha sonreído, bebe un trago.",
+        "¡STOP! Antes de pasar el móvil, el último en decir 'Impostor' bebe un trago.",
+        "Ve con cuidado. Si al ver tu carta has hecho una mueca, bebe un trago disimuladamente.",
+        "¡Atención! {CURRENT_PLAYER}, si llevas algo rojo, bebe un trago antes de pasar el móvil.",
+    ],
+    discussion: [
+        "{RANDOM_PLAYER}, sospecho de ti. Bebe un trago y sigue defendiéndote.",
+        "¡Brindis! Todos los que crean que {RANDOM_PLAYER} es el impostor, beben un trago.",
+        "Si {RANDOM_PLAYER} y {RANDOM_PLAYER} no se han mirado a los ojos en esta ronda, beben un trago.",
+        "El jugador que lleve más tiempo sin ser Impostor, bebe un trago.",
+        "Cualquier jugador que lleve zapatillas blancas, bebe un trago.",
+        "El jugador que esté sentado a la derecha del dueño del móvil, bebe un trago.",
+        "El jugador que haya enviado el último WhatsApp del grupo, bebe un trago.",
+        "Si has dicho la palabra 'literal' o 'en plan' hoy, bebe un trago.",
+    ],
+    results: {
+        impostorWin: "¡Infiltración total! El Impostor se ha reído en vuestra cara. Todos los civiles beben un trago.",
+        civilWin: "Cazado. {IMPOSTOR}, tu cara te ha delatado. Bebe un trago de la derrota.",
+        troll: "¡TRAICIÓN! Todos erais impostores. ¡Nadie es inocente, todos beben un trago!",
+    }
+};
 
-    // 🇪🇸 Localización "Fiesta Española"
-    "¡Cualquier jugador que lleve una prenda de Zara o Pull and Bear, bebe un trago!",
-    "¡El jugador que haya llegado el último a la fiesta, bebe un trago!",
-    "¡Cualquier jugador que prefiera la tortilla SIN cebolla, bebe un trago por pecador!",
-    "¡Si has dicho la palabra 'literal' o 'en plan' hoy, bebe un trago!",
-    "¡El jugador que tenga la caña o el vaso más vacío, bebe un trago!",
-    "¡Cualquier jugador que lleve algo de color negro, bebe un trago!",
-    "¡El jugador que tenga más alarmas puestas para mañana, bebe un trago!",
-    "¡Si has mencionado un bar en tu descripción, bebe un trago!",
-    "¡Cualquier jugador que tenga una foto de su perro en el móvil, bebe un trago!",
-    "¡El jugador que más veces haya dicho 'es que' en esta ronda, bebe un trago!"
-];
+export const DRINKING_PROMPTS = PARTY_PROMPTS.discussion; // Keep compatibility for now
 
 export const DEFAULT_PLAYERS = ["Agente 1", "Agente 2", "Agente 3", "Agente 4"];
 
